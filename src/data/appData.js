@@ -277,7 +277,7 @@ export const content = {
       ]
     },
     whoami: {
-      title: "SIAPA SAYA",
+      title: "WHO AM I",
       path: "/root/ident/sosial",
     },
     footer: {
