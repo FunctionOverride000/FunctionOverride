@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Shield, Languages } from 'lucide-react';
 
 const Navbar = ({ currentView, setCurrentView, lang, toggleLang, t }) => {
@@ -39,4 +39,5 @@ const Navbar = ({ currentView, setCurrentView, lang, toggleLang, t }) => {
   );
 };
 
-export default Navbar;
+// Bungkus dengan React.memo agar Navbar hanya re-render jika props-nya berubah
+export default memo(Navbar);

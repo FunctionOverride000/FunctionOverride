@@ -13,13 +13,23 @@ const BackgroundAnimation = () => {
     let animationFrameId;
     let particles = [];
 
-    const particleCount = 80;
+    // Jarak koneksi antar partikel tetap
     const connectionDistance = 150;
     const moveSpeed = 0.5;
+
+    // Fungsi untuk menghitung jumlah partikel adaptif berdasarkan lebar layar
+    const getAdaptiveParticleCount = () => {
+      const width = window.innerWidth;
+      if (width < 768) return 40; // Mobile: lebih sedikit partikel
+      if (width < 1024) return 60; // Tablet
+      return 80; // Desktop
+    };
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      // Re-init partikel saat ukuran layar berubah drastis agar tidak menumpuk
+      initParticles(); 
     };
 
     class Particle {
@@ -49,7 +59,8 @@ const BackgroundAnimation = () => {
 
     const initParticles = () => {
       particles = [];
-      for (let i = 0; i < particleCount; i++) {
+      const count = getAdaptiveParticleCount();
+      for (let i = 0; i < count; i++) {
         particles.push(new Particle());
       }
     };
@@ -80,13 +91,22 @@ const BackgroundAnimation = () => {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    window.addEventListener('resize', resizeCanvas);
+    // Debounce resize event untuk mencegah frame drop saat resize window
+    let resizeTimer;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeCanvas();
+      }, 250); // Tunggu 250ms setelah resize selesai baru hitung ulang
+    };
+
+    window.addEventListener('resize', handleResize);
     resizeCanvas();
-    initParticles();
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { AlertOctagon, CheckCircle, X } from 'lucide-react';
+import Image from 'next/image'; // <-- TAMBAHKAN IMPORT INI
 
 export const CustomCursor = () => {
   const cursorRef = useRef(null);
@@ -80,11 +81,13 @@ export const FennecLogo = () => (
   <a href="/profile" title="Lihat Profile" className="block">
     <div className="w-64 h-64 md:w-80 md:h-80 mx-auto mb-8 relative flex items-center justify-center transition-transform duration-500 hover:scale-105 cursor-pointer">
       <div className="absolute inset-0 bg-cyan-500/20 blur-3xl rounded-full animate-pulse"></div>
-      <img 
+      <Image 
         src="/fosht.png" 
         alt="FOSHT Logo" 
-        className="relative z-10 w-full h-full object-contain drop-shadow-[0_0_20px_rgba(0,243,255,0.6)]"
-        onError={(e) => {e.target.style.display='none'}}
+        fill
+        priority
+        sizes="(max-width: 768px) 256px, 320px"
+        className="relative z-10 object-contain drop-shadow-[0_0_20px_rgba(0,243,255,0.6)]"
       />
     </div>
   </a>
