@@ -454,7 +454,7 @@ export default function App() {
           </div>
 
           <div className="flex justify-center mt-8">
-            <a href="/#active-modules" className="group inline-flex items-center gap-3 px-6 py-3.5 bg-gray-900 border border-purple-500/30 hover:border-purple-500 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+            <a href="/#modules" className="group inline-flex items-center gap-3 px-6 py-3.5 bg-gray-900 border border-purple-500/30 hover:border-purple-500 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
               <span className="font-bold tracking-wide text-sm sm:text-base">Lihat Semua Proyek di Active Modules</span>
               <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />
             </a>

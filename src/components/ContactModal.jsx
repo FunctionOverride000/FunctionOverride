@@ -31,7 +31,7 @@ const ContactModal = ({ t, onClose }) => {
     
     setTimeout(() => {
       setStatus('SENT');
-      window.location.href = `mailto:b64aafd6159fa34a61c2@cloudmailin.net?subject=SECURE MSG from ${formData.name}&body=${encodeURIComponent(formData.message)}%0D%0A%0D%0A---%0D%0ASent from FOSHT.SYS Secure Terminal%0D%0AUser ID: ${formData.email}`;
+      window.location.href = `mailto:functionoverride000@gmail.com?subject=SECURE MSG from ${formData.name}&body=${encodeURIComponent(formData.message)}%0D%0A%0D%0A---%0D%0ASent from FOSHT.SYS Secure Terminal%0D%0AUser ID: ${formData.email}`;
 
       setAlert({
         type: 'success',
