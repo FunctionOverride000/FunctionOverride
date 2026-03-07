@@ -1,0 +1,19 @@
+# FOSHT — Febriansyah S.Kom
+
+> Personal portfolio and digital command center of Febriansyah, a Web Developer & AI Prompt Specialist based in Lampung, Indonesia.
+
+## About
+Febriansyah (FOSHT) is a web developer specializing in React, Next.js, and AI-powered applications. Graduate of IIB Darmajaya with GPA 3.71.
+
+## Projects
+- Crypto Directory Indonesia: cryptodirectoryindonesia.io
+- Oshtore (web dev services): oshtore.vercel.app
+- Cyber Web Scanner: cyberwebscanner.onrender.com
+- Chat Global: chatglobal.cryptodirectoryindonesia.io
+- BlastFlow: blastflow.onrender.com
+
+## Contact
+- Email: febbriansyah01@gmail.com
+- LinkedIn: https://linkedin.com/in/febriansyah-347b112a4
+- GitHub: https://github.com/FebriOsht
+- Portfolio: https://fosht.vercel.app
