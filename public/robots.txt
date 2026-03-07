@@ -14,8 +14,17 @@ Allow: /
 User-agent: Claude-Web
 Allow: /
 
-User-agent: PerplexityBot
-Disallow: /
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
 
 # Bot spam — block semua
 User-agent: AhrefsBot
@@ -36,4 +45,8 @@ Disallow: /
 User-agent: PetalBot
 Disallow: /
 
+User-agent: PerplexityBot
+Disallow: /
+
+# Sitemap
 Sitemap: https://fosht.vercel.app/sitemap.xml

@@ -3,17 +3,39 @@
 > Personal portfolio and digital command center of Febriansyah, a Web Developer & AI Prompt Specialist based in Lampung, Indonesia.
 
 ## About
-Febriansyah (FOSHT) is a web developer specializing in React, Next.js, and AI-powered applications. Graduate of IIB Darmajaya with GPA 3.71.
+Febriansyah (FOSHT) is a web developer specializing in React, Next.js, Tailwind CSS, and AI-powered applications. Graduate of IIB Darmajaya with GPA 3.71 (2021-2025). Available for freelance and collaboration.
 
-## Projects
-- Crypto Directory Indonesia: cryptodirectoryindonesia.io
-- Oshtore (web dev services): oshtore.vercel.app
-- Cyber Web Scanner: cyberwebscanner.onrender.com
-- Chat Global: chatglobal.cryptodirectoryindonesia.io
-- BlastFlow: blastflow.onrender.com
+## Services (via Oshtore)
+- Custom website development (Landing Page, Company Profile, Web App)
+- AI prompt engineering and automation
+- UI/UX design with Figma, Canva, CorelDraw
+
+## Personal Projects
+- Crypto Directory Indonesia: https://cryptodirectoryindonesia.io — blockchain ecosystem hub for Indonesia
+- Oshtore (web dev services): https://oshtore.vercel.app
+- Cyber Web Scanner: https://cyberwebscanner.onrender.com — automated security auditor
+- Chat Global: https://chatglobal.cryptodirectoryindonesia.io — CLI-style crypto chat
+- BlastFlow: https://blastflow.onrender.com — mass broadcast automation
+- Jurnal Trading: https://jurnaltrading.cryptodirectoryindonesia.io
+
+## Portfolio Clients
+- Swakarsa Digital: https://swakarsadigital.vercel.app
+- Jenggala Coffee & Brew: https://kerabatjenggala.xo.je
+- PT. Anugerah Rekenan Bersama: https://anugerahrekananbersama.site
+- PT. Gatha Gemilang Global: https://gggindonesia.com
+- CV. Satu Optima Jaya: https://cvsatuoptimajaya.vercel.app
+- Cassa Juara: https://cassa-juara.vercel.app
+- Mochi Chewy: https://febriosht.github.io/Mochi-Chewy
+- Flora Rose Catering: https://febriosht.github.io/Flora-Rose-Catering
+
+## Tech Stack
+HTML5, CSS3, JavaScript, React.js, Next.js, Tailwind CSS, Node.js, REST API, SEO
+AI Tools: ChatGPT, Gemini, Claude, DeepSeek, Grok
+Design: Canva, CorelDraw, Photoshop, Figma, CapCut
 
 ## Contact
 - Email: febbriansyah01@gmail.com
 - LinkedIn: https://linkedin.com/in/febriansyah-347b112a4
 - GitHub: https://github.com/FebriOsht
+- Instagram: https://instagram.com/03.febriansyah
 - Portfolio: https://fosht.vercel.app
