@@ -1,8 +1,8 @@
 'use client';
 
-import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
-import { Node, mergeAttributes } from '@tiptap/core';
+import { useEditor, EditorContent, Node, mergeAttributes } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
@@ -14,14 +14,15 @@ import js from 'highlight.js/lib/languages/javascript';
 import css from 'highlight.js/lib/languages/css';
 import xml from 'highlight.js/lib/languages/xml';
 import bash from 'highlight.js/lib/languages/bash';
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Bold, Italic, UnderlineIcon, Strikethrough, Code, Code2,
   Heading1, Heading2, Heading3, List, ListOrdered, Quote,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Image as ImageIcon, Link as LinkIcon, Minus, Undo, Redo,
-  Highlighter, FileCode, Loader2, MoveLeft, MoveRight,
-  AlignHorizontalDistributeCenter, Maximize2, Trash2
+  Highlighter, FileCode, Loader2,
+  MoveLeft, MoveRight, AlignHorizontalDistributeCenter,
+  Maximize2, Trash2
 } from 'lucide-react';
 
 const CLOUDINARY_CLOUD_NAME    = 'dnenghh9o';
@@ -33,202 +34,142 @@ lowlight.register('css', css);
 lowlight.register('html', xml);
 lowlight.register('bash', bash);
 
-// ─────────────────────────────────────────────
-// IMAGE NODE VIEW — klik untuk tampilkan kontrol
-// ─────────────────────────────────────────────
-function ImageNodeView({ node, updateAttributes, deleteNode, selected }) {
-  const { src, alt, width, align } = node.attrs;
-  const imgRef  = useRef();
-  const startX  = useRef(0);
-  const startW  = useRef(0);
-  const [show, setShow] = useState(false);
-
-  useEffect(() => { setShow(selected); }, [selected]);
-
-  // Drag resize handle kanan bawah
-  const onResizeStart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    startX.current = e.clientX;
-    startW.current = imgRef.current?.offsetWidth || 400;
-    const onMove = (ev) => {
-      const newW = Math.max(60, Math.min(900, startW.current + ev.clientX - startX.current));
-      updateAttributes({ width: `${Math.round(newW)}px` });
-    };
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  };
-
-  const wrapStyle = {
-    position: 'relative',
-    display: align === 'center' ? 'flex' : 'inline-block',
-    justifyContent: align === 'center' ? 'center' : undefined,
-    float: align === 'left' ? 'left' : align === 'right' ? 'right' : 'none',
-    margin: align === 'left'   ? '0.5em 1.5em 0.5em 0'
-           : align === 'right' ? '0.5em 0 0.5em 1.5em'
-           : '1em 0',
-    maxWidth: '100%',
-    lineHeight: 0,
-  };
-
-  return (
-    <NodeViewWrapper style={{ display: align === 'left' || align === 'right' ? 'inline' : 'block' }} contentEditable={false}>
-      <div style={wrapStyle} onClick={() => setShow(true)}>
-
-        {/* Gambar */}
-        <img
-          ref={imgRef}
-          src={src}
-          alt={alt || ''}
-          style={{
-            width: width || '100%',
-            maxWidth: '100%',
-            display: 'block',
-            borderRadius: 4,
-            border: show ? '2px solid #00f3ff' : '1px solid rgba(255,255,255,0.08)',
-            userSelect: 'none',
-          }}
-          draggable={false}
-        />
-
-        {/* Resize handle */}
-        {show && (
-          <div
-            onMouseDown={onResizeStart}
-            style={{
-              position: 'absolute', bottom: 4, right: 4,
-              width: 12, height: 12,
-              background: '#00f3ff', borderRadius: 2,
-              cursor: 'se-resize', zIndex: 10,
-            }}
-          />
-        )}
-
-        {/* Floating control panel */}
-        {show && (
-          <div
-            onMouseDown={e => e.preventDefault()}
-            style={{
-              position: 'absolute',
-              top: -46,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: '#0a0f1e',
-              border: '1px solid rgba(0,243,255,0.3)',
-              borderRadius: 5,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              padding: '4px 6px',
-              zIndex: 50,
-              boxShadow: '0 6px 24px rgba(0,0,0,0.7)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {/* Posisi */}
-            <IBtn onClick={() => updateAttributes({ align: 'left' })}   active={align==='left'}   title="Float Kiri"><MoveLeft className="w-3.5 h-3.5"/></IBtn>
-            <IBtn onClick={() => updateAttributes({ align: 'center' })} active={align==='center'} title="Tengah"><AlignHorizontalDistributeCenter className="w-3.5 h-3.5"/></IBtn>
-            <IBtn onClick={() => updateAttributes({ align: 'right' })}  active={align==='right'}  title="Float Kanan"><MoveRight className="w-3.5 h-3.5"/></IBtn>
-            <IBtn onClick={() => updateAttributes({ align: 'none' })}   active={align==='none'}   title="Full Block"><Maximize2 className="w-3.5 h-3.5"/></IBtn>
-
-            <Sep />
-
-            {/* Ukuran preset */}
-            {[['25%','XS'],['50%','S'],['75%','M'],['100%','L']].map(([w,l]) => (
-              <IBtn key={w} onClick={() => updateAttributes({ width: w })} active={width===w} title={`Lebar ${w}`}>
-                <span style={{ fontSize: 9, fontWeight: 900 }}>{l}</span>
-              </IBtn>
-            ))}
-
-            <Sep />
-
-            {/* Hapus */}
-            <IBtn onClick={deleteNode} danger title="Hapus Gambar"><Trash2 className="w-3.5 h-3.5"/></IBtn>
-          </div>
-        )}
-      </div>
-
-      {(align === 'left' || align === 'right') && (
-        <div style={{ clear: 'both', display: 'table' }} />
-      )}
-    </NodeViewWrapper>
-  );
-}
-
-const IBtn = ({ onClick, active, danger, title, children }) => (
-  <button type="button" onClick={onClick} title={title}
-    style={{
-      padding: '3px 6px', borderRadius: 3, border: 'none', cursor: 'pointer',
-      background: active ? '#00f3ff' : 'transparent',
-      color: active ? '#000' : danger ? '#ff6b6b' : '#999',
-      display: 'flex', alignItems: 'center', lineHeight: 1,
-    }}>
-    {children}
-  </button>
-);
-
-const Sep = () => <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)', margin: '0 3px' }} />;
-
-// ─────────────────────────────────────────────
-// CUSTOM IMAGE TIPTAP EXTENSION
-// ─────────────────────────────────────────────
-const ResizableImage = Node.create({
-  name: 'resizableImage',
+// ─────────────────────────────────────────────────────────────
+// CUSTOM IFRAME NODE — agar iframe tidak di-strip TipTap
+// ─────────────────────────────────────────────────────────────
+const IframeNode = Node.create({
+  name: 'iframe',
   group: 'block',
   atom: true,
   draggable: true,
 
   addAttributes() {
     return {
-      src:   { default: null },
-      alt:   { default: '' },
-      width: { default: '100%' },
-      align: { default: 'none' },
+      src:             { default: null },
+      width:           { default: '100%' },
+      height:          { default: '450' },
+      frameborder:     { default: '0' },
+      allowtransparency: { default: 'true' },
+      scrolling:       { default: 'no' },
+      allow:           { default: null },
+      style:           { default: null },
+      'data-wrap-style': { default: null },
     };
   },
 
   parseHTML() {
-    return [{ tag: 'img[src]' }];
+    return [
+      // Parse <iframe> langsung
+      { tag: 'iframe' },
+      // Parse <div> wrapper yang mengandung <iframe>
+      {
+        tag: 'div',
+        getAttrs: (node) => {
+          const iframe = node.querySelector('iframe');
+          if (!iframe) return false;
+          return {
+            src: iframe.getAttribute('src'),
+            width: iframe.getAttribute('width') || '100%',
+            height: iframe.getAttribute('height') || '450',
+            frameborder: iframe.getAttribute('frameborder') || '0',
+            allowtransparency: iframe.getAttribute('allowtransparency') || 'true',
+            scrolling: iframe.getAttribute('scrolling') || 'no',
+            allow: iframe.getAttribute('allow'),
+            'data-wrap-style': node.getAttribute('style'),
+          };
+        },
+      },
+    ];
   },
 
-  renderHTML({ HTMLAttributes: { src, alt, width, align } }) {
-    const style =
-      align === 'left'   ? `float:left;margin:0.5em 1.5em 0.5em 0;width:${width};max-width:100%;border-radius:4px;border:1px solid rgba(255,255,255,0.08)` :
-      align === 'right'  ? `float:right;margin:0.5em 0 0.5em 1.5em;width:${width};max-width:100%;border-radius:4px;border:1px solid rgba(255,255,255,0.08)` :
-      align === 'center' ? `display:block;margin:1em auto;width:${width};max-width:100%;border-radius:4px;border:1px solid rgba(255,255,255,0.08)` :
-                           `display:block;width:${width};max-width:100%;border-radius:4px;margin:1em 0;border:1px solid rgba(255,255,255,0.08)`;
-    return ['img', mergeAttributes({ src, alt, style })];
-  },
+  renderHTML({ HTMLAttributes }) {
+    const {
+      'data-wrap-style': wrapStyle,
+      src, width, height, frameborder,
+      allowtransparency, scrolling, allow
+    } = HTMLAttributes;
 
-  addNodeView() {
-    return ReactNodeViewRenderer(ImageNodeView);
+    const wrapAttrs = {
+      style: wrapStyle || `margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:${height}px;width:100%;background:#0d0d0d;`,
+    };
+
+    const iframeAttrs = mergeAttributes({
+      src, width: '100%', height: '100%',
+      frameborder, allowtransparency, scrolling,
+      ...(allow ? { allow } : {}),
+    });
+
+    return ['div', wrapAttrs, ['iframe', iframeAttrs]];
   },
 });
 
-// ─────────────────────────────────────────────
-// TOOLBAR HELPERS
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// CUSTOM IMAGE EXTENSION — tambah width & align attrs
+// ─────────────────────────────────────────────────────────────
+const ResizableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: '100%',
+        renderHTML: (attrs) => ({ style: `width:${attrs.width};max-width:100%;display:block` }),
+      },
+      align: {
+        default: 'none',
+        renderHTML: (attrs) => ({
+          style: attrs.align === 'left'   ? 'float:left;margin:0.5em 1.5em 0.5em 0'
+               : attrs.align === 'right'  ? 'float:right;margin:0.5em 0 0.5em 1.5em'
+               : attrs.align === 'center' ? 'margin-left:auto;margin-right:auto'
+               :                            'margin:1em 0',
+        }),
+      },
+    };
+  },
+});
+
+// ─────────────────────────────────────────────────────────────
+// TOOLBAR COMPONENTS
+// ─────────────────────────────────────────────────────────────
 const ToolBtn = ({ onClick, active, disabled, title, children }) => (
   <button type="button" onClick={onClick} disabled={disabled} title={title}
-    className={`p-1.5 rounded transition-all ${active ? 'bg-cyan-500 text-black' : 'text-gray-400 hover:text-white hover:bg-gray-800'} disabled:opacity-30 disabled:cursor-not-allowed`}>
+    className={`p-1.5 rounded transition-all ${
+      active ? 'bg-cyan-500 text-black' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+    } disabled:opacity-30 disabled:cursor-not-allowed`}>
     {children}
   </button>
 );
+
 const Divider = () => <div className="w-px h-5 bg-gray-700 mx-0.5" />;
 
-// ─────────────────────────────────────────────
-// MAIN EDITOR COMPONENT
-// ─────────────────────────────────────────────
+const ImgBtn = ({ onClick, active, danger, title, children }) => (
+  <button type="button" onMouseDown={(e) => { e.preventDefault(); onClick(); }} title={title}
+    style={{
+      padding: '3px 7px', borderRadius: 3, border: 'none', cursor: 'pointer',
+      background: active ? '#00f3ff' : 'transparent',
+      color: active ? '#000' : danger ? '#ff6b6b' : '#aaa',
+      display: 'flex', alignItems: 'center', lineHeight: 1, fontSize: 12,
+    }}>
+    {children}
+  </button>
+);
+
+const ImgSep = () => (
+  <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)', margin: '0 3px' }} />
+);
+
+// ─────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────────────────────
 export default function RichEditor({ content, onChange }) {
-  const fileRef = useRef();
+  const fileRef       = useRef();
+  const editorWrapRef = useRef();
   const [mode, setMode]             = useState('visual');
   const [codeValue, setCodeValue]   = useState(content || '');
   const [uploading, setUploading]   = useState(false);
   const [uploadPct, setUploadPct]   = useState(0);
+  const [imgToolbar, setImgToolbar] = useState({
+    visible: false, top: 0, left: 0, align: 'none', width: '100%',
+  });
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -237,40 +178,73 @@ export default function RichEditor({ content, onChange }) {
       Underline,
       Highlight.configure({ multicolor: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      ResizableImage,
+      ResizableImage.configure({ inline: false }),
+      IframeNode, // ← custom node untuk iframe
       Link.configure({ openOnClick: false, HTMLAttributes: { class: 'rich-link' } }),
       Placeholder.configure({ placeholder: 'Mulai menulis...' }),
       CodeBlockLowlight.configure({ lowlight }),
     ],
     content: content || '',
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      setCodeValue(html);
-      onChange(html);
+      queueMicrotask(() => {
+        const html = editor.getHTML();
+        setCodeValue(html);
+        onChange(html);
+      });
     },
-    editorProps: { attributes: { class: 'rich-editor-body focus:outline-none' } },
+    editorProps: {
+      attributes: { class: 'rich-editor-body focus:outline-none' },
+      handleClickOn(view, pos, node) {
+        if (node.type.name === 'image') {
+          const dom = view.nodeDOM(pos);
+          if (dom && editorWrapRef.current) {
+            const wrapRect = editorWrapRef.current.getBoundingClientRect();
+            const imgRect  = dom.getBoundingClientRect();
+            setImgToolbar({
+              visible: true,
+              top:  imgRect.top  - wrapRect.top  - 46,
+              left: imgRect.left - wrapRect.left + imgRect.width / 2,
+              align: node.attrs.align || 'none',
+              width: node.attrs.width || '100%',
+            });
+          }
+          return false;
+        }
+        setImgToolbar(p => ({ ...p, visible: false }));
+        return false;
+      },
+    },
   });
 
-  const switchToVisual = () => { editor?.commands.setContent(codeValue, false); setMode('visual'); };
-  const switchToCode   = () => { setCodeValue(editor?.getHTML() || ''); setMode('code'); };
+  const setImgAttr = (attr, val) => {
+    if (!editor) return;
+    editor.chain().focus().updateAttributes('image', { [attr]: val }).run();
+    setImgToolbar(p => ({ ...p, [attr === 'align' ? 'align' : 'width']: val }));
+    queueMicrotask(() => { const h = editor.getHTML(); onChange(h); setCodeValue(h); });
+  };
+
+  const deleteImg = () => {
+    editor?.chain().focus().deleteSelection().run();
+    setImgToolbar(p => ({ ...p, visible: false }));
+  };
+
+  const switchToVisual = () => {
+    editor?.commands.setContent(codeValue, false);
+    setMode('visual');
+    setImgToolbar(p => ({ ...p, visible: false }));
+  };
+  const switchToCode = () => { setCodeValue(editor?.getHTML() || ''); setMode('code'); };
   const handleCodeChange = (val) => { setCodeValue(val); onChange(val); };
 
-  const insertImage = (src) => {
-    editor?.chain().focus().insertContent({
-      type: 'resizableImage',
-      attrs: { src, align: 'none', width: '100%' },
-    }).run();
-    setTimeout(() => {
-      const html = editor?.getHTML() || '';
-      setCodeValue(html);
-      onChange(html);
-    }, 50);
-  };
+  const insertImage = useCallback((src) => {
+    editor?.chain().focus().setImage({ src, width: '100%', align: 'none' }).run();
+    queueMicrotask(() => { const h = editor?.getHTML()||''; setCodeValue(h); onChange(h); });
+  }, [editor, onChange]);
 
   const addImageUrl = useCallback(() => {
     const url = window.prompt('Image URL (https://...):');
     if (url) insertImage(url);
-  }, [editor]);
+  }, [insertImage]);
 
   const addImageFile = useCallback((e) => {
     const file = e.target.files?.[0];
@@ -278,31 +252,26 @@ export default function RichEditor({ content, onChange }) {
     e.target.value = '';
     if (!file.type.startsWith('image/')) { alert('File harus berupa gambar.'); return; }
     if (file.size > 10 * 1024 * 1024) { alert('Maksimal 10MB.'); return; }
-
     const fd = new FormData();
     fd.append('file', file);
     fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
     fd.append('folder', 'fosht-blog');
-
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
     setUploading(true); setUploadPct(0);
     xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) setUploadPct(Math.round(ev.loaded/ev.total*100)); };
     xhr.onload = () => {
-      if (xhr.status === 200) {
-        insertImage(JSON.parse(xhr.responseText).secure_url);
-      } else {
-        alert('Gagal upload. Cek Cloud Name dan Upload Preset.');
-      }
+      if (xhr.status === 200) insertImage(JSON.parse(xhr.responseText).secure_url);
+      else alert('Gagal upload. Cek Cloud Name dan Upload Preset.');
       setUploading(false); setUploadPct(0);
     };
     xhr.onerror = () => { alert('Gagal upload. Cek koneksi.'); setUploading(false); };
     xhr.send(fd);
-  }, [editor]);
+  }, [insertImage]);
 
   const setLink = useCallback(() => {
     const prev = editor?.getAttributes('link').href;
-    const url = window.prompt('URL:', prev || 'https://');
+    const url  = window.prompt('URL:', prev || 'https://');
     if (url === null) return;
     if (!url) { editor?.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
     editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
@@ -315,7 +284,6 @@ export default function RichEditor({ content, onChange }) {
 
       {/* TOOLBAR */}
       <div className="bg-[#0a0f1e] border-b border-gray-800 p-2 flex flex-wrap items-center gap-0.5">
-        {/* Mode toggle */}
         <div className="flex items-center gap-0.5 bg-black/40 border border-gray-700 rounded-sm p-0.5 mr-2">
           <button type="button" onClick={switchToVisual}
             className={`text-[10px] px-2.5 py-1 rounded-sm font-bold tracking-widest transition-all ${mode==='visual'?'bg-cyan-500 text-black':'text-gray-500 hover:text-white'}`}>
@@ -358,30 +326,59 @@ export default function RichEditor({ content, onChange }) {
           <ToolBtn onClick={()=>fileRef.current?.click()} disabled={uploading} title="Upload Gambar">
             {uploading
               ? <span className="text-[10px] font-bold text-cyan-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin"/>{uploadPct}%</span>
-              : <span className="text-[10px] font-bold">IMG↑</span>
-            }
+              : <span className="text-[10px] font-bold">IMG↑</span>}
           </ToolBtn>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={addImageFile}/>
           <Divider/>
           <ToolBtn onClick={()=>editor.chain().focus().setHorizontalRule().run()} title="Garis"><Minus className="w-4 h-4"/></ToolBtn>
         </>)}
-
-        {mode === 'code' && (
-          <span className="text-xs text-gray-600 ml-1">Edit HTML langsung — switch ke VISUAL untuk kontrol gambar visual</span>
-        )}
+        {mode === 'code' && <span className="text-xs text-gray-600 ml-1">Edit HTML langsung · iframe & chart otomatis tersimpan</span>}
       </div>
 
-      {/* VISUAL */}
+      {/* VISUAL EDITOR */}
       {mode === 'visual' && (
-        <div className="bg-[#050a15] min-h-[400px] p-6">
+        <div ref={editorWrapRef} className="bg-[#050a15] min-h-[400px] p-6 relative"
+          onClick={(e) => { if (e.target.tagName !== 'IMG') setImgToolbar(p=>({...p,visible:false})); }}>
+
+          {/* Image floating toolbar */}
+          {imgToolbar.visible && (
+            <div onMouseDown={e => e.preventDefault()}
+              style={{
+                position: 'absolute',
+                top: Math.max(4, imgToolbar.top),
+                left: imgToolbar.left,
+                transform: 'translateX(-50%)',
+                background: '#0a0f1e',
+                border: '1px solid rgba(0,243,255,0.35)',
+                borderRadius: 5,
+                display: 'flex', alignItems: 'center', gap: 1,
+                padding: '4px 6px', zIndex: 50,
+                boxShadow: '0 6px 24px rgba(0,0,0,0.8)',
+                whiteSpace: 'nowrap',
+              }}>
+              <ImgBtn onClick={()=>setImgAttr('align','left')}   active={imgToolbar.align==='left'}   title="Float Kiri"><MoveLeft className="w-3.5 h-3.5"/></ImgBtn>
+              <ImgBtn onClick={()=>setImgAttr('align','center')} active={imgToolbar.align==='center'} title="Tengah"><AlignHorizontalDistributeCenter className="w-3.5 h-3.5"/></ImgBtn>
+              <ImgBtn onClick={()=>setImgAttr('align','right')}  active={imgToolbar.align==='right'}  title="Float Kanan"><MoveRight className="w-3.5 h-3.5"/></ImgBtn>
+              <ImgBtn onClick={()=>setImgAttr('align','none')}   active={imgToolbar.align==='none'}   title="Full Block"><Maximize2 className="w-3.5 h-3.5"/></ImgBtn>
+              <ImgSep/>
+              {[['25%','XS'],['50%','S'],['75%','M'],['100%','L']].map(([w,l])=>(
+                <ImgBtn key={w} onClick={()=>setImgAttr('width',w)} active={imgToolbar.width===w} title={`Lebar ${w}`}>
+                  <span style={{fontSize:9,fontWeight:900}}>{l}</span>
+                </ImgBtn>
+              ))}
+              <ImgSep/>
+              <ImgBtn onClick={deleteImg} danger title="Hapus"><Trash2 className="w-3.5 h-3.5"/></ImgBtn>
+            </div>
+          )}
+
           <EditorContent editor={editor}/>
           <p className="text-[10px] text-gray-700 mt-4 border-t border-gray-900 pt-3">
-            💡 <strong className="text-gray-600">Klik gambar</strong> untuk muncul toolbar — atur posisi (kiri · tengah · kanan · full), ukuran preset (XS · S · M · L), atau <strong className="text-gray-600">drag sudut kanan bawah</strong> untuk resize bebas
+            💡 <strong className="text-gray-600">Klik gambar</strong> untuk toolbar posisi & ukuran · chart/iframe tampil di visual mode
           </p>
         </div>
       )}
 
-      {/* HTML */}
+      {/* HTML EDITOR */}
       {mode === 'code' && (
         <div className="relative">
           <textarea value={codeValue} onChange={e=>handleCodeChange(e.target.value)}
@@ -390,18 +387,15 @@ export default function RichEditor({ content, onChange }) {
             onKeyDown={(e)=>{
               if(e.key==='Tab'){
                 e.preventDefault();
-                const s=e.target.selectionStart;
-                const v=e.target.value;
+                const s=e.target.selectionStart, v=e.target.value;
                 handleCodeChange(v.substring(0,s)+'  '+v.substring(e.target.selectionEnd));
                 setTimeout(()=>{e.target.selectionStart=e.target.selectionEnd=s+2;},0);
               }
-            }}
-          />
+            }}/>
           <div className="absolute top-2 right-4 text-[10px] text-gray-700 tracking-widest">HTML MODE</div>
         </div>
       )}
 
-      {/* STYLES */}
       <style dangerouslySetInnerHTML={{__html:`
         .rich-editor-body{color:#ccc;font-family:'Courier New',monospace;font-size:15px;line-height:1.9;min-height:380px;}
         .rich-editor-body p.is-editor-empty:first-child::before{content:attr(data-placeholder);float:left;color:#333;pointer-events:none;height:0;}
@@ -413,7 +407,7 @@ export default function RichEditor({ content, onChange }) {
         .rich-editor-body em{color:#ddd;font-style:italic;}
         .rich-editor-body u{text-decoration:underline;text-underline-offset:3px;}
         .rich-editor-body mark{background:#00f3ff33;color:#00f3ff;padding:1px 4px;border-radius:2px;}
-        .rich-editor-body a.rich-link{color:#00f3ff;text-decoration:underline;text-underline-offset:3px;}
+        .rich-editor-body a.rich-link{color:#00f3ff;text-decoration:underline;}
         .rich-editor-body code{background:#0d1117;border:1px solid #ffffff15;color:#00f3ff;padding:2px 6px;border-radius:3px;font-size:13px;}
         .rich-editor-body pre{background:#0a0f1e;border:1px solid #ffffff10;border-left:3px solid #00f3ff;padding:18px;border-radius:4px;overflow-x:auto;margin:1.2em 0;}
         .rich-editor-body pre code{background:none;border:none;padding:0;color:#e6e6e6;font-size:13px;}
@@ -423,6 +417,10 @@ export default function RichEditor({ content, onChange }) {
         .rich-editor-body li{margin-bottom:0.3em;}
         .rich-editor-body ul li::marker{color:#00f3ff;}
         .rich-editor-body hr{border:none;border-top:1px solid #1a1a2e;margin:1.5em 0;}
+        .rich-editor-body img{max-width:100%;border-radius:4px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;display:block;}
+        .rich-editor-body img.ProseMirror-selectednode{outline:2px solid #00f3ff;outline-offset:2px;}
+        .rich-editor-body iframe{width:100%;border-radius:6px;border:none;display:block;}
+        .rich-editor-body div[data-type="iframe"]{margin:1.5em 0;}
       `}}/>
     </div>
   );

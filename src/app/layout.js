@@ -69,6 +69,11 @@ export const metadata = {
   alternates: {
     canonical: 'https://fosht.vercel.app',
   },
+  // 👇 TAMBAHKAN KODE INI DI SINI 👇
+  verification: {
+    google: 'R9N85Ul-VgmfuQl2O_iZlzqZzxNibGUji-Oq_AKvlY8', 
+  },
+  // 👆 ---------------------------- 👆
 };
 
 export default function RootLayout({ children }) {

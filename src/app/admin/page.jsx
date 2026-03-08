@@ -11,11 +11,11 @@ import {
 import { auth, db } from '@/lib/firebase';
 import {
   Lock, LogOut, Plus, Edit2, Trash2, Eye, EyeOff,
-  Save, X, Terminal, Globe, EyeIcon, SplitSquareHorizontal
+  Save, X, Terminal, Globe, EyeIcon, SplitSquareHorizontal,
+  PanelLeft
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
-// Dynamic import RichEditor agar tidak SSR
 const RichEditor = dynamic(() => import('@/components/RichEditor'), { ssr: false });
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
@@ -37,24 +37,57 @@ const formatDate = (ts) => {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
+// Prose styles identik dengan /blog/[slug]
+const PROSE_CSS = `
+  .prose-fosht{color:#ccc;line-height:1.9;font-size:15px;font-family:'Courier New',monospace;}
+  .prose-fosht h1{color:#fff;font-size:2em;font-weight:900;margin:1.5em 0 0.5em;}
+  .prose-fosht h2{color:#fff;font-size:1.5em;font-weight:800;margin:1.5em 0 0.5em;border-bottom:1px solid #1a1a2e;padding-bottom:0.5em;}
+  .prose-fosht h3{color:#00f3ff;font-size:1.2em;font-weight:700;margin:1.2em 0 0.4em;}
+  .prose-fosht p{margin:0 0 1.4em;}
+  .prose-fosht a{color:#00f3ff;text-decoration:underline;text-underline-offset:3px;}
+  .prose-fosht code{background:#0d1117;border:1px solid #ffffff15;color:#00f3ff;padding:2px 8px;border-radius:3px;font-size:13px;}
+  .prose-fosht pre{background:#0a0f1e;border:1px solid #ffffff10;border-left:3px solid #00f3ff;padding:20px;border-radius:4px;overflow-x:auto;margin:1.5em 0;}
+  .prose-fosht pre code{background:none;border:none;padding:0;color:#e6e6e6;font-size:13px;}
+  .prose-fosht blockquote{border-left:3px solid #00f3ff44;padding-left:1.2em;color:#888;margin:1.5em 0;font-style:italic;}
+  .prose-fosht ul{list-style:disc;padding-left:1.5em;margin:0 0 1.4em;}
+  .prose-fosht ol{list-style:decimal;padding-left:1.5em;margin:0 0 1.4em;}
+  .prose-fosht li{margin-bottom:0.4em;}
+  .prose-fosht ul li::marker{color:#00f3ff;}
+  .prose-fosht strong{color:#fff;font-weight:700;}
+  .prose-fosht em{font-style:italic;}
+  .prose-fosht u{text-decoration:underline;text-underline-offset:3px;}
+  .prose-fosht mark{background:#00f3ff33;color:#00f3ff;padding:1px 4px;border-radius:2px;}
+  .prose-fosht img{max-width:100%;border-radius:4px;border:1px solid #ffffff10;margin:1.5em 0;display:block;}
+  .prose-fosht hr{border:none;border-top:1px solid #1a1a2e;margin:2em 0;}
+  .prose-fosht iframe{width:100%;border-radius:6px;border:1px solid rgba(0,243,255,0.1);margin:1.5em 0;display:block;}
+  .prose-fosht table{width:100%;border-collapse:collapse;font-size:13px;margin:1.5em 0;background:#0a0f1e;border-radius:6px;overflow:hidden;border:1px solid rgba(0,243,255,0.12);font-family:'Courier New',monospace;}
+  .prose-fosht thead tr{background:rgba(0,243,255,0.07);}
+  .prose-fosht th{padding:10px 14px;text-align:left;color:#00f3ff;font-size:11px;letter-spacing:2px;border-bottom:1px solid rgba(0,243,255,0.15);font-weight:700;white-space:nowrap;}
+  .prose-fosht td{padding:10px 14px;border-bottom:1px solid #0d1117;color:#ccc;vertical-align:top;}
+  .prose-fosht td strong{color:#fff;}
+  .prose-fosht tr:last-child td{border-bottom:none;color:#555;font-style:italic;}
+  .prose-fosht tr:hover td{background:rgba(255,255,255,0.02);}
+`;
+
 export default function AdminPage() {
-  const [user, setUser]             = useState(null);
+  const [user, setUser]               = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [email, setEmail]           = useState('');
-  const [password, setPassword]     = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [loggingIn, setLoggingIn]   = useState(false);
-  const [showPw, setShowPw]         = useState(false);
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [loginError, setLoginError]   = useState('');
+  const [loggingIn, setLoggingIn]     = useState(false);
+  const [showPw, setShowPw]           = useState(false);
 
-  const [posts, setPosts]           = useState([]);
+  const [posts, setPosts]             = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
-  const [view, setView]             = useState('list'); // list | editor
-  const [editorMode, setEditorMode] = useState('write'); // write | preview | split
-  const [saving, setSaving]         = useState(false);
-  const [saveMsg, setSaveMsg]       = useState('');
+  const [view, setView]               = useState('list');       // list | editor
+  const [editorMode, setEditorMode]   = useState('write');      // write | split | preview
+  const [metaOpen, setMetaOpen]       = useState(true);         // collapsible meta panel
+  const [saving, setSaving]           = useState(false);
+  const [saveMsg, setSaveMsg]         = useState('');
 
-  const [editPost, setEditPost]     = useState(null);
-  const [form, setForm]             = useState({
+  const [editPost, setEditPost]       = useState(null);
+  const [form, setForm]               = useState({
     title: '', slug: '', excerpt: '', content: '', tags: '', published: false
   });
 
@@ -80,11 +113,8 @@ export default function AdminPage() {
     setLoginError('');
     if (email !== ADMIN_EMAIL) { setLoginError('ACCESS DENIED: Unauthorized email.'); return; }
     setLoggingIn(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch {
-      setLoginError('AUTHENTICATION FAILED: Wrong credentials.');
-    }
+    try { await signInWithEmailAndPassword(auth, email, password); }
+    catch { setLoginError('AUTHENTICATION FAILED: Wrong credentials.'); }
     setLoggingIn(false);
   };
 
@@ -94,6 +124,7 @@ export default function AdminPage() {
     setEditPost(null);
     setForm({ title: '', slug: '', excerpt: '', content: '', tags: '', published: false });
     setEditorMode('write');
+    setMetaOpen(true);
     setView('editor');
   };
 
@@ -108,13 +139,13 @@ export default function AdminPage() {
       published: post.published || false,
     });
     setEditorMode('write');
+    setMetaOpen(false);
     setView('editor');
   };
 
   const handleTitleChange = (val) => {
     setForm(prev => ({
-      ...prev,
-      title: val,
+      ...prev, title: val,
       slug: editPost ? prev.slug : toSlug(val),
     }));
   };
@@ -212,163 +243,178 @@ export default function AdminPage() {
     </div>
   );
 
-  // ── EDITOR
+  // ── EDITOR — full height, tidak ada scroll yang hilang
   if (view === 'editor') return (
-    <div className="min-h-screen bg-[#050505] font-mono text-white flex flex-col">
+    <div className="h-screen bg-[#050505] font-mono text-white flex flex-col overflow-hidden">
 
-      {/* Editor nav */}
-      <div className="border-b border-gray-800 bg-black/60 backdrop-blur-sm sticky top-0 z-10">
-        <div className="px-6 py-3 flex items-center justify-between gap-4">
-          <button onClick={() => setView('list')}
-            className="text-gray-500 hover:text-white text-xs flex items-center gap-1.5 transition-colors">
-            <X className="w-3 h-3" /> CANCEL
-          </button>
+      {/* ── TOP NAV BAR ── */}
+      <div className="shrink-0 border-b border-gray-800 bg-black/80 backdrop-blur-sm z-20">
+        <div className="px-4 h-11 flex items-center justify-between gap-3">
 
-          {/* View mode toggle */}
-          <div className="flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-sm p-0.5">
+          {/* Kiri: cancel + title preview */}
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setView('list')}
+              className="text-gray-500 hover:text-white text-xs flex items-center gap-1.5 transition-colors shrink-0">
+              <X className="w-3 h-3" /> BACK
+            </button>
+            <span className="text-gray-700 text-xs">·</span>
+            <span className="text-gray-500 text-xs truncate max-w-[180px] hidden sm:block">
+              {form.title || 'Untitled Post'}
+            </span>
+            {form.published && (
+              <span className="text-[10px] text-green-500 border border-green-500/20 bg-green-500/5 px-2 py-0.5 rounded-sm shrink-0">LIVE</span>
+            )}
+          </div>
+
+          {/* Tengah: write / split / preview toggle */}
+          <div className="flex items-center gap-0.5 bg-gray-900/80 border border-gray-800 rounded-sm p-0.5 shrink-0">
             {[
-              { id: 'write', label: 'WRITE', icon: <Edit2 className="w-3 h-3" /> },
-              { id: 'split', label: 'SPLIT', icon: <SplitSquareHorizontal className="w-3 h-3" /> },
+              { id: 'write',   label: 'WRITE',   icon: <PanelLeft className="w-3 h-3" /> },
+              { id: 'split',   label: 'SPLIT',   icon: <SplitSquareHorizontal className="w-3 h-3" /> },
               { id: 'preview', label: 'PREVIEW', icon: <Eye className="w-3 h-3" /> },
             ].map(m => (
               <button key={m.id} onClick={() => setEditorMode(m.id)}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-sm transition-all ${
-                  editorMode === m.id ? 'bg-cyan-500 text-black font-bold' : 'text-gray-500 hover:text-white'
+                className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-sm transition-all font-bold tracking-wider ${
+                  editorMode === m.id ? 'bg-cyan-500 text-black' : 'text-gray-500 hover:text-white'
                 }`}>
                 {m.icon} {m.label}
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Kanan: status + save + publish */}
+          <div className="flex items-center gap-2 shrink-0">
             {saveMsg && (
-              <span className={`text-xs ${saveMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-400'}`}>
+              <span className={`text-[10px] font-bold ${saveMsg.startsWith('ERROR') ? 'text-red-400' : 'text-green-400'}`}>
                 {saveMsg}
               </span>
             )}
             <button onClick={() => handleSave(false)} disabled={saving}
-              className="text-xs px-3 py-1.5 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 rounded-sm transition-colors flex items-center gap-1.5">
+              className="text-[10px] px-3 py-1.5 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 rounded-sm transition-colors flex items-center gap-1.5 font-bold tracking-wider">
               <Save className="w-3 h-3" /> DRAFT
             </button>
             <button onClick={() => handleSave(true)} disabled={saving}
-              className="text-xs px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-sm transition-colors flex items-center gap-1.5">
+              className="text-[10px] px-3 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-sm transition-colors flex items-center gap-1.5 tracking-wider">
               <Globe className="w-3 h-3" /> PUBLISH
             </button>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      {/* ── META PANEL — collapsible ── */}
+      <div className="shrink-0 border-b border-gray-800 bg-[#03060f]">
+        {/* Toggle header */}
+        <button
+          onClick={() => setMetaOpen(p => !p)}
+          className="w-full px-4 py-2 flex items-center gap-2 text-left hover:bg-white/[0.02] transition-colors group">
+          <span className={`text-[10px] font-bold tracking-[2px] transition-colors ${metaOpen ? 'text-cyan-400' : 'text-gray-600 group-hover:text-gray-400'}`}>
+            POST META
+          </span>
+          <span className="text-[10px] text-gray-700 group-hover:text-gray-600 transition-colors">
+            {metaOpen ? '▲ sembunyikan' : `▼ ${form.title ? form.title.slice(0,40)+'...' : 'klik untuk isi judul, slug, tags'}`}
+          </span>
+        </button>
 
-        {/* Meta fields */}
-        <div className="border-b border-gray-800 bg-[#050505] px-6 py-4 space-y-3">
-          {/* Title */}
-          <input type="text" value={form.title} onChange={e => handleTitleChange(e.target.value)}
-            className="w-full bg-transparent border-none text-2xl md:text-3xl font-black text-white focus:outline-none placeholder:text-gray-700"
-            placeholder="Post title..." />
+        {metaOpen && (
+          <div className="px-4 pb-4 space-y-3">
+            {/* Title — besar */}
+            <input
+              type="text" value={form.title} onChange={e => handleTitleChange(e.target.value)}
+              className="w-full bg-transparent border-none text-xl md:text-2xl font-black text-white focus:outline-none placeholder:text-gray-800"
+              placeholder="Judul post..." autoFocus />
 
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Slug */}
-            <div className="flex items-center gap-1.5 text-xs text-gray-600">
-              <span>/blog/</span>
-              <input type="text" value={form.slug} onChange={e => setForm(p => ({ ...p, slug: e.target.value }))}
-                className="bg-transparent border-b border-gray-800 text-gray-400 focus:outline-none focus:border-cyan-500 w-48 pb-0.5"
-                placeholder="auto-slug" />
-            </div>
-
-            {/* Tags */}
-            <input type="text" value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
-              className="bg-transparent border-b border-gray-800 text-gray-400 text-xs focus:outline-none focus:border-cyan-500 w-48 pb-0.5"
-              placeholder="Tags: React, AI, Crypto" />
-
-            {/* Excerpt */}
-            <input type="text" value={form.excerpt} onChange={e => setForm(p => ({ ...p, excerpt: e.target.value }))}
-              className="flex-1 bg-transparent border-b border-gray-800 text-gray-400 text-xs focus:outline-none focus:border-cyan-500 pb-0.5 min-w-[200px]"
-              placeholder="Short excerpt for blog list..." />
-          </div>
-        </div>
-
-        {/* Editor / Preview area */}
-        <div className={`flex-1 ${editorMode === 'split' ? 'grid grid-cols-2' : ''}`}>
-
-          {/* Write panel */}
-          {(editorMode === 'write' || editorMode === 'split') && (
-            <div className={`${editorMode === 'split' ? 'border-r border-gray-800 overflow-auto' : ''}`}>
-              <RichEditor
-                content={form.content}
-                onChange={(html) => setForm(p => ({ ...p, content: html }))}
-              />
-            </div>
-          )}
-
-          {/* Preview panel — tampilan persis seperti /blog/[slug] */}
-          {(editorMode === 'preview' || editorMode === 'split') && (
-            <div className={`bg-[#050505] overflow-auto ${editorMode === 'split' ? 'h-full' : 'min-h-screen'}`}>
-              <div className="max-w-3xl mx-auto px-6 py-10">
-
-                {/* Preview badge */}
-                <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-sm mb-6">
-                  <Eye className="w-3 h-3 text-yellow-400" />
-                  <span className="text-yellow-400 text-xs tracking-widest">PREVIEW MODE</span>
-                </div>
-
-                {/* Tags */}
-                {form.tags && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {form.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
-                      <span key={tag} className="text-[10px] px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-sm tracking-widest">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Title */}
-                <h1 className="text-3xl md:text-4xl font-black text-white leading-tight mb-4">
-                  {form.title || 'Post title...'}
-                </h1>
-
-                {/* Meta */}
-                <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600 mb-8 pb-6 border-b border-gray-800">
-                  <span>{new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                  <span>{readTime(form.content)} min read</span>
-                  <span className="text-gray-700">by Febriansyah</span>
-                </div>
-
-                {/* Content — sama persis dengan [slug]/page.jsx */}
-                <div
-                  className="prose-fosht"
-                  dangerouslySetInnerHTML={{ __html: form.content || '<p style="color:#333">Start writing to see preview...</p>' }}
-                />
+            {/* Row: slug + tags + excerpt */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Slug */}
+              <div className="flex items-center gap-1.5 bg-[#080d1a] border border-gray-800 rounded-sm px-3 py-2 focus-within:border-cyan-500/50 transition-colors">
+                <span className="text-[10px] text-gray-600 shrink-0 font-bold tracking-wider">/blog/</span>
+                <input type="text" value={form.slug} onChange={e => setForm(p => ({ ...p, slug: e.target.value }))}
+                  className="bg-transparent text-gray-300 text-xs focus:outline-none w-full font-mono"
+                  placeholder="auto-generate-dari-judul" />
               </div>
 
-              {/* Prose styles — identik dengan [slug]/page.jsx */}
-              <style dangerouslySetInnerHTML={{__html: `
-                .prose-fosht { color: #ccc; line-height: 1.9; font-size: 15px; font-family: 'Courier New', monospace; }
-                .prose-fosht h1 { color: #fff; font-size: 2em; font-weight: 900; margin: 1.5em 0 0.5em; }
-                .prose-fosht h2 { color: #fff; font-size: 1.5em; font-weight: 800; margin: 1.5em 0 0.5em; border-bottom: 1px solid #1a1a2e; padding-bottom: 0.5em; }
-                .prose-fosht h3 { color: #00f3ff; font-size: 1.2em; font-weight: 700; margin: 1.2em 0 0.4em; }
-                .prose-fosht p { margin: 0 0 1.4em; }
-                .prose-fosht a { color: #00f3ff; text-decoration: underline; text-underline-offset: 3px; }
-                .prose-fosht code { background: #0d1117; border: 1px solid #ffffff15; color: #00f3ff; padding: 2px 8px; border-radius: 3px; font-size: 13px; }
-                .prose-fosht pre { background: #0a0f1e; border: 1px solid #ffffff10; border-left: 3px solid #00f3ff; padding: 20px; border-radius: 4px; overflow-x: auto; margin: 1.5em 0; }
-                .prose-fosht pre code { background: none; border: none; padding: 0; color: #e6e6e6; font-size: 13px; }
-                .prose-fosht blockquote { border-left: 3px solid #00f3ff44; padding-left: 1.2em; color: #888; margin: 1.5em 0; font-style: italic; }
-                .prose-fosht ul { list-style: disc; padding-left: 1.5em; margin: 0 0 1.4em; }
-                .prose-fosht ol { list-style: decimal; padding-left: 1.5em; margin: 0 0 1.4em; }
-                .prose-fosht li { margin-bottom: 0.4em; }
-                .prose-fosht ul li::marker { color: #00f3ff; }
-                .prose-fosht strong { color: #fff; font-weight: 700; }
-                .prose-fosht em { font-style: italic; }
-                .prose-fosht u { text-decoration: underline; text-underline-offset: 3px; }
-                .prose-fosht mark { background: #00f3ff33; color: #00f3ff; padding: 1px 4px; border-radius: 2px; }
-                .prose-fosht img { max-width: 100%; border-radius: 4px; border: 1px solid #ffffff10; margin: 1.5em 0; display: block; }
-                .prose-fosht img[style*="margin: 0 auto"] { margin-left: auto !important; margin-right: auto !important; }
-                .prose-fosht hr { border: none; border-top: 1px solid #1a1a2e; margin: 2em 0; }
-              `}} />
+              {/* Tags */}
+              <div className="flex items-center gap-1.5 bg-[#080d1a] border border-gray-800 rounded-sm px-3 py-2 focus-within:border-cyan-500/50 transition-colors">
+                <span className="text-[10px] text-gray-600 shrink-0 font-bold tracking-wider">#</span>
+                <input type="text" value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
+                  className="bg-transparent text-gray-300 text-xs focus:outline-none w-full"
+                  placeholder="Bitcoin, Crypto, Web3" />
+              </div>
+
+              {/* Excerpt */}
+              <div className="flex items-center gap-1.5 bg-[#080d1a] border border-gray-800 rounded-sm px-3 py-2 focus-within:border-cyan-500/50 transition-colors">
+                <span className="text-[10px] text-gray-600 shrink-0 font-bold tracking-wider">¶</span>
+                <input type="text" value={form.excerpt} onChange={e => setForm(p => ({ ...p, excerpt: e.target.value }))}
+                  className="bg-transparent text-gray-300 text-xs focus:outline-none w-full"
+                  placeholder="Deskripsi singkat untuk list blog..." />
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Info bar */}
+            <div className="flex items-center gap-4 text-[10px] text-gray-700">
+              <span>{readTime(form.content)} min read</span>
+              <span>{form.content.replace(/<[^>]+>/g,'').split(/\s+/).filter(Boolean).length} kata</span>
+              <span className={form.published ? 'text-green-600' : 'text-gray-700'}>
+                {form.published ? '● PUBLISHED' : '○ DRAFT'}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── EDITOR / PREVIEW AREA — flex-1, overflow internal ── */}
+      <div className={`flex-1 min-h-0 flex ${editorMode === 'split' ? 'flex-row' : 'flex-col'}`}>
+
+        {/* Write panel */}
+        {(editorMode === 'write' || editorMode === 'split') && (
+          <div className={`flex-1 min-h-0 overflow-y-auto ${editorMode === 'split' ? 'border-r border-gray-800 w-1/2 flex-none' : 'w-full'}`}>
+            <RichEditor
+              content={form.content}
+              onChange={(html) => setForm(p => ({ ...p, content: html }))}
+            />
+          </div>
+        )}
+
+        {/* Preview panel */}
+        {(editorMode === 'preview' || editorMode === 'split') && (
+          <div className={`overflow-y-auto bg-[#050505] ${editorMode === 'split' ? 'w-1/2 flex-none' : 'flex-1 min-h-0'}`}>
+            <div className="max-w-3xl mx-auto px-6 py-8">
+
+              <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-sm mb-6">
+                <Eye className="w-3 h-3 text-yellow-400" />
+                <span className="text-yellow-400 text-[10px] tracking-widest font-bold">PREVIEW</span>
+              </div>
+
+              {form.tags && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {form.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
+                    <span key={tag} className="text-[10px] px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-sm tracking-widest">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <h1 className="text-2xl md:text-3xl font-black text-white leading-tight mb-3">
+                {form.title || <span className="text-gray-800">Judul post...</span>}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-3 text-[10px] text-gray-600 mb-6 pb-4 border-b border-gray-800">
+                <span>{new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })}</span>
+                <span>·</span>
+                <span>{readTime(form.content)} min read</span>
+                <span>·</span>
+                <span>by Febri Osht</span>
+              </div>
+
+              <div
+                className="prose-fosht"
+                dangerouslySetInnerHTML={{ __html: form.content || '<p style="color:#1a1a1a">Mulai menulis untuk lihat preview...</p>' }}
+              />
+            </div>
+            <style dangerouslySetInnerHTML={{ __html: PROSE_CSS }} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -421,27 +467,31 @@ export default function AdminPage() {
           <div className="space-y-2">
             {posts.map(post => (
               <div key={post.id}
-                className="border border-gray-800 bg-black/20 px-5 py-4 rounded-sm flex items-center gap-4 hover:border-gray-700 transition-colors">
+                className="border border-gray-800 bg-black/20 px-5 py-4 rounded-sm flex items-center gap-4 hover:border-gray-700 transition-colors group">
                 <div className={`w-2 h-2 rounded-full shrink-0 ${post.published ? 'bg-green-500' : 'bg-gray-600'}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{post.title}</p>
+                  <p className="text-sm font-bold text-white truncate group-hover:text-cyan-400 transition-colors">{post.title}</p>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                     <span className="text-xs text-gray-600">/blog/{post.slug}</span>
-                    {post.tags?.slice(0, 2).map(t => (
-                      <span key={t} className="text-[10px] text-cyan-600">{t}</span>
+                    {post.tags?.slice(0, 3).map(t => (
+                      <span key={t} className="text-[10px] text-cyan-700">#{t}</span>
                     ))}
-                    <span className={`text-[10px] ${post.published ? 'text-green-500' : 'text-gray-600'}`}>
-                      {post.published ? 'PUBLISHED' : 'DRAFT'}
+                    <span className={`text-[10px] font-bold ${post.published ? 'text-green-600' : 'text-gray-700'}`}>
+                      {post.published ? '● LIVE' : '○ DRAFT'}
                     </span>
                     <span className="text-[10px] text-gray-700">{formatDate(post.createdAt)}</span>
+                    {post.readTime && <span className="text-[10px] text-gray-700">{post.readTime} min</span>}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => togglePublish(post)}
-                    title={post.published ? 'Unpublish' : 'Publish'}
-                    className={`p-2 rounded-sm transition-colors ${post.published ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-600 hover:bg-gray-800 hover:text-gray-400'}`}>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button onClick={() => togglePublish(post)} title={post.published ? 'Unpublish' : 'Publish'}
+                    className={`p-2 rounded-sm transition-colors ${post.published ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-600 hover:bg-gray-800 hover:text-gray-400'}`}>
                     {post.published ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </button>
+                  <a href={`/blog/${post.slug}`} target="_blank" title="Lihat post"
+                    className="p-2 rounded-sm text-gray-600 hover:bg-gray-800 hover:text-white transition-colors">
+                    <EyeIcon className="w-4 h-4" />
+                  </a>
                   <button onClick={() => openEdit(post)} title="Edit"
                     className="p-2 rounded-sm text-gray-600 hover:bg-gray-800 hover:text-cyan-400 transition-colors">
                     <Edit2 className="w-4 h-4" />
