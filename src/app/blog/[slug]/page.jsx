@@ -95,7 +95,7 @@ export default function BlogPostPage({ params }) {
               {post.readTime} min read
             </span>
           )}
-          <span className="text-gray-700">by Febriansyah</span>
+          <span className="text-gray-700">by Febri Osht</span>
         </div>
 
         {/* Content */}
