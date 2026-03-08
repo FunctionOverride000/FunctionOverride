@@ -1,6 +1,6 @@
 // SERVER COMPONENT — no 'use client'
 // Google reads full HTML directly without waiting for JS
-
+import Link from 'next/link';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { notFound } from 'next/navigation';
