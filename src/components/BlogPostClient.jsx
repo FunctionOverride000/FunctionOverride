@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Calendar, Eye, ArrowRight, Terminal } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Eye, ArrowRight, Terminal, Mail, CheckCircle, Loader } from 'lucide-react';
 import BlogFooter from '@/components/BlogFooter';
 import GiscusComments from '@/components/GiscusComments';
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import BitcoinSupport from '@/components/BitcoinSupport';
+import { collection, getDocs, query, where, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 function executeContentScripts(container) {
@@ -200,6 +201,117 @@ const formatDate = (iso) => {
   return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
+// ── Newsletter Subscribe Form
+function NewsletterForm() {
+  const [email, setEmail]   = useState('');
+  const [status, setStatus] = useState('idle'); // idle | loading | success | error | duplicate
+  const [msg, setMsg]       = useState('');
+
+  const handleSubmit = async () => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setStatus('error');
+      setMsg('Please enter a valid email address.');
+      return;
+    }
+
+    setStatus('loading');
+
+    try {
+      // Cek duplikat
+      const existing = await getDocs(query(
+        collection(db, 'subscribers'),
+        where('email', '==', trimmed),
+        limit(1)
+      ));
+
+      if (!existing.empty) {
+        setStatus('duplicate');
+        setMsg('This email is already subscribed.');
+        return;
+      }
+
+      // Simpan ke Firestore
+      await addDoc(collection(db, 'subscribers'), {
+        email: trimmed,
+        subscribedAt: serverTimestamp(),
+        source: 'blog',
+      });
+
+      setStatus('success');
+      setMsg('');
+      setEmail('');
+    } catch {
+      setStatus('error');
+      setMsg('Something went wrong. Please try again.');
+    }
+  };
+
+  if (status === 'success') {
+    return (
+      <div className="mt-16 pt-10 border-t border-gray-800">
+        <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-sm p-6 flex items-center gap-4">
+          <CheckCircle className="w-5 h-5 text-cyan-400 shrink-0" />
+          <div>
+            <p className="text-white text-sm font-bold">You're subscribed!</p>
+            <p className="text-gray-600 text-xs mt-0.5">You'll be notified when new articles are published.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-16 pt-10 border-t border-gray-800">
+      <div className="bg-[#080d1a] border border-gray-800 rounded-sm p-6">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-cyan-500/10 border border-cyan-500/20 rounded-sm flex items-center justify-center shrink-0">
+            <Mail className="w-4 h-4 text-cyan-400" />
+          </div>
+          <div>
+            <p className="text-white text-sm font-bold">Stay Updated</p>
+            <p className="text-gray-600 text-xs">Get notified when new articles are published.</p>
+          </div>
+        </div>
+
+        {/* Input + Button */}
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setStatus('idle'); }}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+            placeholder="your@email.com"
+            className="flex-1 bg-black/40 border border-gray-800 focus:border-cyan-500/40 text-white text-xs px-3 py-2.5 rounded-sm outline-none placeholder:text-gray-700 font-mono transition-colors"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={status === 'loading'}
+            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold tracking-wider rounded-sm hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+          >
+            {status === 'loading'
+              ? <Loader className="w-3 h-3 animate-spin" />
+              : <Mail className="w-3 h-3" />
+            }
+            Subscribe
+          </button>
+        </div>
+
+        {/* Error / duplicate message */}
+        {(status === 'error' || status === 'duplicate') && (
+          <p className={`text-xs mt-2 ${status === 'duplicate' ? 'text-yellow-500/70' : 'text-red-500/70'}`}>
+            {msg}
+          </p>
+        )}
+
+        <p className="text-[10px] text-gray-800 mt-3">No spam. Unsubscribe anytime.</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Reading Progress Bar
 function ReadingProgressBar() {
   const [progress, setProgress] = useState(0);
@@ -311,6 +423,10 @@ export default function BlogPostClient({ post }) {
           dangerouslySetInnerHTML={{ __html: post.content }} />
 
         <RelatedArticles currentSlug={post.slug} tags={post.tags} />
+
+        <BitcoinSupport />
+
+        <NewsletterForm />
 
         <GiscusComments />
 
