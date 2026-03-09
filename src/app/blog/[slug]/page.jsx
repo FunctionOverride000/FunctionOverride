@@ -59,7 +59,8 @@ export async function generateMetadata({ params }) {
     const ogDate  = post.createdAt
       ? new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
-    const ogImage = `https://fosht.vercel.app/api/og?title=${encodeURIComponent(post.title)}&tags=${encodeURIComponent((post.tags || []).join(','))}&date=${encodeURIComponent(ogDate)}`;
+    const articleImg = post.coverImage || extractFirstImageServer(post.content) || '';
+    const ogImage = `https://fosht.vercel.app/api/og?title=${encodeURIComponent(post.title)}&tags=${encodeURIComponent((post.tags || []).join(','))}&date=${encodeURIComponent(ogDate)}&img=${encodeURIComponent(articleImg)}&logo=${encodeURIComponent('https://fosht.vercel.app/fennec.png')}`;
 
     return {
       title: `${post.title} — FOSHT Blog`,
