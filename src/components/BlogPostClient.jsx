@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Clock, Calendar, Eye, ArrowRight, Terminal } from 'lucide-react';
 import BlogFooter from '@/components/BlogFooter';
+import GiscusComments from '@/components/GiscusComments';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -310,6 +311,8 @@ export default function BlogPostClient({ post }) {
           dangerouslySetInnerHTML={{ __html: post.content }} />
 
         <RelatedArticles currentSlug={post.slug} tags={post.tags} />
+
+        <GiscusComments />
 
         <BlogFooter title={post.title} slug={post.slug} />
       </article>
