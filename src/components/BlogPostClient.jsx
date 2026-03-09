@@ -199,6 +199,31 @@ const formatDate = (iso) => {
   return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
+// ── Reading Progress Bar
+function ReadingProgressBar() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const update = () => {
+      const scrollTop    = window.scrollY;
+      const docHeight    = document.documentElement.scrollHeight - window.innerHeight;
+      const pct          = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setProgress(Math.min(100, Math.max(0, pct)));
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-transparent pointer-events-none">
+      <div
+        className="h-full bg-cyan-400 transition-none"
+        style={{ width: `${progress}%`, boxShadow: '0 0 8px rgba(0,243,255,0.6)' }}
+      />
+    </div>
+  );
+}
+
 export default function BlogPostClient({ post }) {
   const contentRef = useRef(null);
   const views = formatViews(post.views);
@@ -224,6 +249,8 @@ export default function BlogPostClient({ post }) {
 
   return (
     <main className="min-h-screen bg-[#050505] text-white font-mono">
+
+      <ReadingProgressBar />
 
       {/* Sticky nav */}
       <div className="border-b border-gray-800 bg-black/40 backdrop-blur-sm sticky top-0 z-10">

@@ -55,6 +55,12 @@ export async function generateMetadata({ params }) {
 
     const firstImg = post.coverImage || extractFirstImageServer(post.content);
 
+    // OG image — auto-generated per article
+    const ogDate  = post.createdAt
+      ? new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '';
+    const ogImage = `https://fosht.vercel.app/api/og?title=${encodeURIComponent(post.title)}&tags=${encodeURIComponent((post.tags || []).join(','))}&date=${encodeURIComponent(ogDate)}`;
+
     return {
       title: `${post.title} — FOSHT Blog`,
       description: post.excerpt || post.title,
@@ -69,13 +75,13 @@ export async function generateMetadata({ params }) {
         publishedTime: post.createdAt,
         authors: ['Febri Osht'],
         tags: post.tags,
-        images: firstImg ? [{ url: firstImg, width: 1200, height: 630, alt: post.title }] : [],
+        images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
       },
       twitter: {
         card: 'summary_large_image',
         title: post.title,
         description: post.excerpt || post.title,
-        images: firstImg ? [firstImg] : [],
+        images: [ogImage],
         creator: '@babyybossssss',
       },
       alternates: {
