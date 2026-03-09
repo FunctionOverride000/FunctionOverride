@@ -62,7 +62,6 @@ export async function generateMetadata({ params }) {
     // Untuk OG image: prioritaskan coverImage karena bisa difetch server
     // Hindari URL dari domain yang memblokir server fetch
     const blockedDomains = ['alternative.me', 'tradingview.com', 'investing.com'];
-    const firstImg = extractFirstImageServer(post.content);
     const articleImg = post.coverImage
       ? post.coverImage
       : (firstImg && !blockedDomains.some(d => firstImg.includes(d)) ? firstImg : '');
