@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
   Terminal, Clock, ArrowRight, Search, X,
   Flame, TrendingUp, Globe, Zap, SlidersHorizontal,
-  ChevronDown, LayoutGrid, List, RefreshCw, ArrowLeft
+  ChevronDown, LayoutGrid, List, RefreshCw, ArrowLeft, Eye
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────
@@ -67,6 +67,14 @@ function extractFirstImage(html) {
   return m ? m[1] : null;
 }
 
+// 1234 → "1.2k"
+function formatViews(n) {
+  if (!n || n < 1) return null;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace('.0', '')}m`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1).replace('.0', '')}k`;
+  return n.toString();
+}
+
 const formatDate = (ts) => {
   if (!ts) return '—';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -80,6 +88,7 @@ function CardGrid({ post }) {
   const img = post._image;
   const isTrending = post._trending?.score > 0;
   const isGlobal   = post._trending?.global;
+  const views      = formatViews(post.views);
 
   return (
     <Link href={`/blog/${post.slug}`}>
@@ -116,6 +125,15 @@ function CardGrid({ post }) {
               </span>
             )}
           </div>
+
+          {/* View count overlay */}
+          {views && (
+            <div className="absolute bottom-2 right-2">
+              <span className="text-[9px] px-1.5 py-0.5 bg-black/60 text-gray-400 rounded-sm flex items-center gap-1 backdrop-blur-sm">
+                <Eye className="w-2.5 h-2.5" />{views}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Body */}
@@ -169,6 +187,7 @@ function CardList({ post }) {
   const img = post._image;
   const isTrending = post._trending?.score > 0;
   const isGlobal   = post._trending?.global;
+  const views      = formatViews(post.views);
 
   return (
     <Link href={`/blog/${post.slug}`}>
@@ -236,6 +255,11 @@ function CardList({ post }) {
           <div className="flex items-center gap-3 text-[10px] text-gray-700">
             <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{formatDate(post.createdAt)}</span>
             {post.readTime && <span>{post.readTime} min read</span>}
+            {views && (
+              <span className="flex items-center gap-1">
+                <Eye className="w-2.5 h-2.5" />{views}
+              </span>
+            )}
             <ArrowRight className={`w-3 h-3 ml-auto transition-all group-hover:translate-x-1 ${
               isTrending ? 'text-orange-800 group-hover:text-orange-400' : 'text-gray-800 group-hover:text-cyan-400'
             }`} />
@@ -250,9 +274,10 @@ function CardList({ post }) {
 // MAIN PAGE
 // ─────────────────────────────────────────────
 const SORT_OPTS = [
-  { id: 'trending', label: 'Trending', icon: <Flame className="w-3 h-3" /> },
-  { id: 'newest',   label: 'Newest',   icon: <Zap className="w-3 h-3" /> },
-  { id: 'oldest',   label: 'Oldest',   icon: <Clock className="w-3 h-3" /> },
+  { id: 'trending',  label: 'Trending',   icon: <Flame className="w-3 h-3" /> },
+  { id: 'views',     label: 'Most Viewed', icon: <Eye className="w-3 h-3" /> },
+  { id: 'newest',    label: 'Newest',      icon: <Zap className="w-3 h-3" /> },
+  { id: 'oldest',    label: 'Oldest',      icon: <Clock className="w-3 h-3" /> },
 ];
 const PER_PAGE = 12;
 const MAX_TAGS = 8;
@@ -321,6 +346,8 @@ export default function FoshtBlogPage() {
 
     if (sort === 'trending') {
       res.sort((a, b) => b._trending.score - a._trending.score);
+    } else if (sort === 'views') {
+      res.sort((a, b) => (b.views || 0) - (a.views || 0));
     } else if (sort === 'newest') {
       res.sort((a, b) => {
         const da = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);

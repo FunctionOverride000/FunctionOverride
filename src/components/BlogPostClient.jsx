@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Eye } from 'lucide-react';
 import BlogFooter from '@/components/BlogFooter';
 
 function executeContentScripts(container) {
@@ -15,6 +15,14 @@ function executeContentScripts(container) {
     newScript.textContent = oldScript.textContent;
     oldScript.parentNode.replaceChild(newScript, oldScript);
   });
+}
+
+// 1234 → "1.2k" · 1000000 → "1m"
+function formatViews(n) {
+  if (!n || n < 1) return null;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace('.0', '')}m`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1).replace('.0', '')}k`;
+  return n.toString();
 }
 
 const PROSE_CSS = `
@@ -72,6 +80,7 @@ const formatDate = (iso) => {
 
 export default function BlogPostClient({ post }) {
   const contentRef = useRef(null);
+  const views = formatViews(post.views);
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -127,7 +136,7 @@ export default function BlogPostClient({ post }) {
           {post.title}
         </h1>
 
-        {/* Meta */}
+        {/* Meta — date · read time · views · author */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-600 mb-8 sm:mb-10 pb-6 sm:pb-8 border-b border-gray-800">
           <span className="flex items-center gap-1.5">
             <Calendar className="w-3 h-3" />
@@ -137,6 +146,12 @@ export default function BlogPostClient({ post }) {
             <span className="flex items-center gap-1.5">
               <Clock className="w-3 h-3" />
               {post.readTime} min read
+            </span>
+          )}
+          {views && (
+            <span className="flex items-center gap-1.5">
+              <Eye className="w-3 h-3" />
+              {views} views
             </span>
           )}
           <span className="text-gray-700">by Febri Osht</span>

@@ -1,10 +1,21 @@
 // SERVER COMPONENT — no 'use client'
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { notFound } from 'next/navigation';
-import BlogPostClient from '@/components/BlogPostClient'; // Ini yang akan menampilkan UI-nya
+import BlogPostClient from '@/components/BlogPostClient';
 
-// ── Server fetch (Mengambil data dari Firebase)
+// ── Increment view count (fire and forget — tidak block render)
+async function incrementView(postId) {
+  try {
+    await updateDoc(doc(db, 'posts', postId), {
+      views: increment(1),
+    });
+  } catch {
+    // Silent fail — not critical
+  }
+}
+
+// ── Server fetch
 async function getPost(slug) {
   try {
     const q = query(
@@ -16,7 +27,7 @@ async function getPost(slug) {
     const snap = await getDocs(q);
     if (snap.empty) return null;
     const data = snap.docs[0].data();
-    
+
     // Firestore Timestamp tidak bisa di-serialize ke client — convert dulu
     return {
       id: snap.docs[0].id,
@@ -37,7 +48,7 @@ function extractFirstImageServer(html) {
 
 // ── generateMetadata: SEO title/desc/og per article
 export async function generateMetadata({ params }) {
-  const { slug } = await params; // Next.js 15 requires await params
+  const { slug } = await params;
   try {
     const post = await getPost(slug);
     if (!post) return { title: 'Post Not Found — FOSHT' };
@@ -48,7 +59,7 @@ export async function generateMetadata({ params }) {
       title: `${post.title} — FOSHT Blog`,
       description: post.excerpt || post.title,
       keywords: post.tags?.join(', '),
-      authors: [{ name: 'Febriansyah', url: 'https://fosht.vercel.app' }],
+      authors: [{ name: 'Febri Osht', url: 'https://fosht.vercel.app' }],
       openGraph: {
         title: post.title,
         description: post.excerpt || post.title,
@@ -56,7 +67,7 @@ export async function generateMetadata({ params }) {
         siteName: 'FOSHT Blog',
         type: 'article',
         publishedTime: post.createdAt,
-        authors: ['Febriansyah'],
+        authors: ['Febri Osht'],
         tags: post.tags,
         images: firstImg ? [{ url: firstImg, width: 1200, height: 630, alt: post.title }] : [],
       },
@@ -78,10 +89,13 @@ export async function generateMetadata({ params }) {
 
 // ── Page component (Server)
 export default async function BlogPostPage({ params }) {
-  const { slug } = await params; // Next.js 15 requires await params
+  const { slug } = await params;
   const post = await getPost(slug);
 
   if (!post) notFound();
+
+  // Increment view — non-blocking, runs parallel with render
+  incrementView(post.id);
 
   // JSON-LD structured data for Google rich results
   const jsonLd = {
@@ -91,7 +105,7 @@ export default async function BlogPostPage({ params }) {
     description: post.excerpt || post.title,
     author: {
       '@type': 'Person',
-      name: 'Febriansyah',
+      name: 'Febri Osht',
       url: 'https://fosht.vercel.app',
     },
     publisher: {
@@ -112,13 +126,10 @@ export default async function BlogPostPage({ params }) {
 
   return (
     <>
-      {/* Inject schema SEO untuk Google */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      
-      {/* Serahkan urusan UI ke Client Component */}
       <BlogPostClient post={post} />
     </>
   );
