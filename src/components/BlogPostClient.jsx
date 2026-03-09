@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Calendar, Eye } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Eye, ArrowRight, Terminal } from 'lucide-react';
 import BlogFooter from '@/components/BlogFooter';
+import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 function executeContentScripts(container) {
   if (!container) return;
@@ -15,6 +17,125 @@ function executeContentScripts(container) {
     newScript.textContent = oldScript.textContent;
     oldScript.parentNode.replaceChild(newScript, oldScript);
   });
+}
+
+// ── Related Articles Component
+function RelatedArticles({ currentSlug, tags }) {
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!tags?.length) { setLoading(false); return; }
+
+    const fetch_ = async () => {
+      try {
+        // Ambil semua published posts, filter by tag di client
+        // (Firestore tidak support array-contains + orderBy tanpa composite index)
+        const snap = await getDocs(query(
+          collection(db, 'posts'),
+          where('published', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        ));
+
+        const results = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(p =>
+            p.slug !== currentSlug &&
+            p.tags?.some(t => tags.includes(t))
+          )
+          // Sort by jumlah tag yang cocok (paling relevan duluan)
+          .sort((a, b) => {
+            const aMatch = a.tags?.filter(t => tags.includes(t)).length || 0;
+            const bMatch = b.tags?.filter(t => tags.includes(t)).length || 0;
+            return bMatch - aMatch;
+          })
+          .slice(0, 3);
+
+        setRelated(results);
+      } catch {
+        // Silent fail
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetch_();
+  }, [currentSlug, tags?.join(',')]);
+
+  if (loading || related.length === 0) return null;
+
+  const formatDate_ = (ts) => {
+    if (!ts) return '—';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getImage = (post) => {
+    if (post.coverImage) return post.coverImage;
+    const m = post.content?.match(/<img[^>]+src=["']([^"']+)["']/i);
+    return m ? m[1] : null;
+  };
+
+  return (
+    <div className="mt-16 pt-10 border-t border-gray-800">
+      <div className="flex items-center gap-3 mb-6">
+        <span className="text-[10px] tracking-[3px] text-gray-600">RELATED ARTICLES</span>
+        <div className="flex-1 h-px bg-gray-900" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {related.map(post => {
+          const img = getImage(post);
+          const sharedTags = post.tags?.filter(t => tags.includes(t)) || [];
+          return (
+            <Link key={post.id} href={`/blog/${post.slug}`}>
+              <article className="group h-full flex flex-col rounded-sm border border-gray-800 overflow-hidden hover:border-cyan-500/30 transition-all duration-200 bg-[#080d1a]/70">
+                {/* Thumbnail */}
+                <div className="relative overflow-hidden shrink-0" style={{ height: 110 }}>
+                  {img ? (
+                    <>
+                      <img src={img} alt={post.title}
+                        className="w-full h-full object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#080d1a] via-transparent to-transparent" />
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-[#070c18] flex items-center justify-center border-b border-gray-900">
+                      <Terminal className="w-5 h-5 text-gray-800" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="flex flex-col flex-1 p-3 gap-2">
+                  {/* Shared tags */}
+                  <div className="flex flex-wrap gap-1">
+                    {sharedTags.slice(0, 2).map(t => (
+                      <span key={t} className="text-[8px] px-1.5 py-0.5 bg-cyan-500/8 text-cyan-700 border border-cyan-500/12 rounded-sm">{t}</span>
+                    ))}
+                  </div>
+
+                  {/* Title */}
+                  <h4 className="font-bold text-xs leading-snug line-clamp-2 text-white group-hover:text-cyan-400 transition-colors flex-1">
+                    {post.title}
+                  </h4>
+
+                  {/* Meta */}
+                  <div className="flex items-center justify-between text-[9px] text-gray-700 pt-1.5 border-t border-gray-900 mt-auto">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-2 h-2" />
+                      {formatDate_(post.createdAt)}
+                    </span>
+                    <ArrowRight className="w-2.5 h-2.5 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
+              </article>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // 1234 → "1.2k" · 1000000 → "1m"
@@ -160,6 +281,8 @@ export default function BlogPostClient({ post }) {
         {/* Content */}
         <div ref={contentRef} className="prose-fosht"
           dangerouslySetInnerHTML={{ __html: post.content }} />
+
+        <RelatedArticles currentSlug={post.slug} tags={post.tags} />
 
         <BlogFooter title={post.title} slug={post.slug} />
       </article>
