@@ -4,7 +4,7 @@ import { db } from '@/lib/firebase';
 import { notFound } from 'next/navigation';
 import BlogPostClient from '@/components/BlogPostClient';
 
-// ── Increment view count (fire and forget — tidak block render)
+// ── Increment view count (fire and forget)
 async function incrementView(postId) {
   try {
     await updateDoc(doc(db, 'posts', postId), {
@@ -27,8 +27,6 @@ async function getPost(slug) {
     const snap = await getDocs(q);
     if (snap.empty) return null;
     const data = snap.docs[0].data();
-
-    // Firestore Timestamp tidak bisa di-serialize ke client — convert dulu
     return {
       id: snap.docs[0].id,
       ...data,
@@ -53,15 +51,12 @@ export async function generateMetadata({ params }) {
     const post = await getPost(slug);
     if (!post) return { title: 'Post Not Found — FOSHT' };
 
-    const firstImg = post.coverImage || extractFirstImageServer(post.content);
-
-    // OG image — auto-generated per article
-    const ogDate  = post.createdAt
+    const ogDate = post.createdAt
       ? new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
-    // Untuk OG image: prioritaskan coverImage karena bisa difetch server
-    // Hindari URL dari domain yang memblokir server fetch
+
     const blockedDomains = ['alternative.me', 'tradingview.com', 'investing.com'];
+    const firstImg = extractFirstImageServer(post.content);
     const articleImg = post.coverImage
       ? post.coverImage
       : (firstImg && !blockedDomains.some(d => firstImg.includes(d)) ? firstImg : '');
@@ -107,10 +102,9 @@ export default async function BlogPostPage({ params }) {
 
   if (!post) notFound();
 
-  // Increment view — non-blocking, runs parallel with render
+  // Increment view — non-blocking
   incrementView(post.id);
 
-  // JSON-LD structured data for Google rich results
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
