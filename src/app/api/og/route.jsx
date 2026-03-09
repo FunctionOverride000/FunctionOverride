@@ -12,31 +12,42 @@ export async function GET(request) {
   const tags    = searchParams.get('tags')   || '';
   const date    = searchParams.get('date')   || '';
   const imgUrl  = searchParams.get('img')    || '';
-  const logoUrl = searchParams.get('logo')   || '';
   const tagArr  = tags.split(',').filter(Boolean).slice(0, 3);
+
+  // Ambil base URL dari request (works di semua environment)
+  const baseUrl = `${new URL(request.url).protocol}//${new URL(request.url).host}`;
 
   // Pre-fetch images as base64 so edge runtime can render them
   let logoData = null;
   let imgData  = null;
 
-  if (logoUrl) {
-    try {
-      const res  = await fetch(logoUrl);
-      const buf  = await res.arrayBuffer();
-      const b64  = Buffer.from(buf).toString('base64');
-      const mime = res.headers.get('content-type') || 'image/png';
-      logoData   = `data:${mime};base64,${b64}`;
-    } catch {}
-  }
+  // Logo — selalu pakai /fosht.png dari domain sendiri (pasti bisa diakses)
+  try {
+    const res  = await fetch(`${baseUrl}/fosht.png`);
+    const buf  = await res.arrayBuffer();
+    const b64  = Buffer.from(buf).toString('base64');
+    logoData   = `data:image/png;base64,${b64}`;
+  } catch {}
 
+  // Article image — skip jika domain memblokir server fetch (e.g. alternative.me)
   if (imgUrl) {
-    try {
-      const res  = await fetch(imgUrl);
-      const buf  = await res.arrayBuffer();
-      const b64  = Buffer.from(buf).toString('base64');
-      const mime = res.headers.get('content-type') || 'image/jpeg';
-      imgData    = `data:${mime};base64,${b64}`;
-    } catch {}
+    const blockedDomains = ['alternative.me', 'tradingview.com', 'investing.com'];
+    const isBlocked = blockedDomains.some(d => imgUrl.includes(d));
+
+    if (!isBlocked) {
+      try {
+        const res  = await fetch(imgUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OGBot/1.0)' },
+          signal: AbortSignal.timeout(4000), // 4 detik timeout
+        });
+        if (res.ok) {
+          const buf  = await res.arrayBuffer();
+          const b64  = Buffer.from(buf).toString('base64');
+          const mime = res.headers.get('content-type') || 'image/jpeg';
+          imgData    = `data:${mime};base64,${b64}`;
+        }
+      } catch {}
+    }
   }
 
   const hasImg   = !!imgData;

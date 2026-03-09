@@ -59,8 +59,14 @@ export async function generateMetadata({ params }) {
     const ogDate  = post.createdAt
       ? new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
-    const articleImg = post.coverImage || extractFirstImageServer(post.content) || '';
-    const ogImage = `https://fosht.vercel.app/api/og?title=${encodeURIComponent(post.title)}&tags=${encodeURIComponent((post.tags || []).join(','))}&date=${encodeURIComponent(ogDate)}&img=${encodeURIComponent(articleImg)}&logo=${encodeURIComponent('https://fosht.vercel.app/fennec.png')}`;
+    // Untuk OG image: prioritaskan coverImage karena bisa difetch server
+    // Hindari URL dari domain yang memblokir server fetch
+    const blockedDomains = ['alternative.me', 'tradingview.com', 'investing.com'];
+    const articleImg = post.coverImage
+      ? post.coverImage
+      : (firstImg && !blockedDomains.some(d => firstImg.includes(d)) ? firstImg : '');
+
+    const ogImage = `https://fosht.vercel.app/api/og?title=${encodeURIComponent(post.title)}&tags=${encodeURIComponent((post.tags || []).join(','))}&date=${encodeURIComponent(ogDate)}&img=${encodeURIComponent(articleImg)}`;
 
     return {
       title: `${post.title} — FOSHT Blog`,
