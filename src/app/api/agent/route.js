@@ -98,7 +98,7 @@ PENTING:
 - hasRealtimeData: true jika artikel membahas harga/chart realtime (crypto, saham, komoditas)`;
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -106,7 +106,7 @@ PENTING:
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.8,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
           responseMimeType: 'application/json',
         },
       }),
@@ -125,8 +125,29 @@ PENTING:
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini returned empty response');
 
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  // Robust JSON parse — handle terpotong
+  let clean = text.replace(/```json|```/g, '').trim();
+  // Coba parse langsung
+  try {
+    return JSON.parse(clean);
+  } catch {
+    // Coba extract JSON object dari teks
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        // Coba fix unterminated string dengan menutup JSON
+        let fixed = match[0];
+        // Count unclosed braces
+        let open = (fixed.match(/\{/g) || []).length;
+        let close = (fixed.match(/\}/g) || []).length;
+        while (close < open) { fixed += '}'; close++; }
+        return JSON.parse(fixed);
+      }
+    }
+    throw new Error('Failed to parse Gemini JSON response');
+  }
 }
 
 // ── Generate image via Pollinations.ai (gratis, no API key)
