@@ -54,8 +54,11 @@ async function searchNews(query) {
   return res.json();
 }
 
-// ── Generate artikel via Gemini
-async function generateArticle({ topic, searchResults }) {
+// ── Sleep helper
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// ── Generate artikel via Gemini (dengan retry)
+async function generateArticle({ topic, searchResults }, retries = 3) {
   const sourceSummaries = searchResults.results
     .slice(0, 4)
     .map((r, i) => `[${i + 1}] ${r.title}\n${r.content?.slice(0, 400) || r.snippet || ''}`)
@@ -95,7 +98,7 @@ PENTING:
 - hasRealtimeData: true jika artikel membahas harga/chart realtime (crypto, saham, komoditas)`;
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -110,7 +113,14 @@ PENTING:
     }
   );
 
-  if (!res.ok) throw new Error(`Gemini error: ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 429 && retries > 0) {
+      console.log(`[Agent] Gemini 429 — retrying in 30s... (${retries} retries left)`);
+      await sleep(30000);
+      return generateArticle({ topic, searchResults }, retries - 1);
+    }
+    throw new Error(`Gemini error: ${res.status}`);
+  }
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini returned empty response');
