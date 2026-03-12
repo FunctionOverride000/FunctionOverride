@@ -56,7 +56,7 @@ export const personalProjects = [
     desc: "BlastFlow executes high-velocity communication sequences with precision.",
     details: "An automated orchestration engine designed for mass-scale data transmission. This system manages complex broadcast workflows, ensuring targeted delivery with real-time latency monitoring and adaptive queue optimization.",
     logoImg: "/blastflow.png",
-    domain: "blastflow.onrender.com",
+    domain: "https://blastflow.vercel.app",
     type: "personal"
   },
 ];

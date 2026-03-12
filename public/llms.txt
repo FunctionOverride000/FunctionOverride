@@ -15,7 +15,7 @@ Febriansyah (FOSHT) is a web developer specializing in React, Next.js, Tailwind 
 - Oshtore (web dev services): https://oshtore.vercel.app
 - Cyber Web Scanner: https://cyberwebscanner.onrender.com — automated security auditor
 - Chat Global: https://chatglobal.cryptodirectoryindonesia.io — CLI-style crypto chat
-- BlastFlow: https://blastflow.onrender.com — mass broadcast automation
+- BlastFlow: https://blastflow.vercel.app — mass broadcast automation
 - Jurnal Trading: https://jurnaltrading.cryptodirectoryindonesia.io
 
 ## Portfolio Clients
