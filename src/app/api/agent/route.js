@@ -1,9 +1,19 @@
 // src/app/api/agent/route.js
 // AI Agent — otomatis cari berita, tulis artikel, publish ke Firestore
-// Trigger: Vercel Cron setiap 6 jam ATAU manual GET /api/agent?secret=...
+// Trigger: Vercel Cron setiap 6 jam ATAU manual POST /api/agent?secret=...
 
+import { NextResponse } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { AGENT_TOPICS, ARTICLES_PER_RUN } from './topics';
+
+// ==========================================
+// LEAD DEV FIX: KONFIGURASI SERVERLESS
+// ==========================================
+// Mematikan cache Next.js sepenuhnya agar Action/Cron jalan tiap saat
+export const dynamic = 'force-dynamic'; 
+// Memperpanjang batas waktu eksekusi (Max 60 detik untuk Vercel Hobby/Gratisan)
+export const maxDuration = 60; 
 
 // ── Firebase Admin init (server-side)
 function getAdminDb() {
@@ -201,66 +211,74 @@ async function publishArticle(db, article, coverImage) {
   return { success: true, id: ref.id, slug, title: article.title };
 }
 
-// ── Main handler
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const secret = searchParams.get('secret');
-  const isCron = request.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`;
+// ==========================================
+// LEAD DEV FIX: UBAH GET MENJADI POST 
+// (Supaya tidak di-cache oleh Next.js)
+// ==========================================
+export async function POST(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const secret = searchParams.get('secret');
+    const isCron = request.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`;
 
-  // Auth check — hanya cron atau manual dengan secret
-  if (!isCron && secret !== process.env.AGENT_SECRET) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Lazy import topics (avoid top-level import issues)
-  const { AGENT_TOPICS, ARTICLES_PER_RUN } = await import('./topics.js');
-
-  const db = getAdminDb();
-  const results = [];
-  const topics  = pickTopics(AGENT_TOPICS, ARTICLES_PER_RUN);
-
-  for (const topic of topics) {
-    try {
-      console.log(`[Agent] Processing topic: ${topic}`);
-
-      // 1. Search berita
-      const searchData = await searchNews(topic);
-      if (!searchData.results?.length) {
-        results.push({ topic, error: 'No search results' });
-        continue;
-      }
-
-      // 2. Generate artikel
-      const article = await generateArticle({ topic, searchResults: searchData });
-
-      // 3. Generate atau ambil cover image
-      let coverImage = null;
-      if (article.hasRealtimeData) {
-        // Pakai image dari hasil search jika ada
-        const imgResult = searchData.results.find(r => r.url?.match(/\.(jpg|png|webp)/i));
-        coverImage = imgResult?.url || null;
-      }
-      if (!coverImage && article.coverImagePrompt) {
-        coverImage = await generateCoverImage(article.coverImagePrompt);
-      }
-
-      // 4. Publish ke Firestore
-      const publishResult = await publishArticle(db, article, coverImage);
-      results.push({ topic, ...publishResult });
-
-      // Delay antar artikel supaya tidak hit rate limit
-      await new Promise(r => setTimeout(r, 2000));
-
-    } catch (err) {
-      console.error(`[Agent] Error on topic "${topic}":`, err.message);
-      results.push({ topic, error: err.message });
+    // Auth check — hanya cron atau manual dengan secret
+    if (!isCron && secret !== process.env.AGENT_SECRET) {
+      console.warn('[Agent] Unauthorized hit attempted.');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-  }
 
-  return Response.json({
-    success: true,
-    timestamp: new Date().toISOString(),
-    processed: topics.length,
-    results,
-  });
+    const db = getAdminDb();
+    const results = [];
+    const topics  = pickTopics(AGENT_TOPICS, ARTICLES_PER_RUN);
+
+    for (const topic of topics) {
+      try {
+        console.log(`[Agent] Processing topic: ${topic}`);
+
+        // 1. Search berita
+        const searchData = await searchNews(topic);
+        if (!searchData.results?.length) {
+          results.push({ topic, error: 'No search results' });
+          continue;
+        }
+
+        // 2. Generate artikel
+        const article = await generateArticle({ topic, searchResults: searchData });
+
+        // 3. Generate atau ambil cover image
+        let coverImage = null;
+        if (article.hasRealtimeData) {
+          // Pakai image dari hasil search jika ada
+          const imgResult = searchData.results.find(r => r.url?.match(/\.(jpg|png|webp)/i));
+          coverImage = imgResult?.url || null;
+        }
+        if (!coverImage && article.coverImagePrompt) {
+          coverImage = await generateCoverImage(article.coverImagePrompt);
+        }
+
+        // 4. Publish ke Firestore
+        const publishResult = await publishArticle(db, article, coverImage);
+        results.push({ topic, ...publishResult });
+
+        // Delay antar artikel supaya tidak hit rate limit LLM/Search API
+        await sleep(2000);
+
+      } catch (err) {
+        console.error(`[Agent] Error on topic "${topic}":`, err.message);
+        results.push({ topic, error: err.message });
+      }
+    }
+
+    return NextResponse.json({
+      status: "success",
+      timestamp: new Date().toISOString(),
+      processed: topics.length,
+      results
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error('[Agent] Fatal Error:', error);
+    // Return 500 agar gagal jika ada runtime error
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

@@ -11,10 +11,15 @@ jobs:
       - name: Trigger AI Agent
         run: |
           echo "Triggering AI Agent at $(date)"
-          RESPONSE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+          
+          # PERUBAHAN LEAD DEV: Gunakan -X POST untuk menghindari Next.js Cache
+          RESPONSE=$(curl -X POST -s -o /tmp/response.json -w "%{http_code}" \
             "https://fosht.vercel.app/api/agent?secret=${{ secrets.AGENT_SECRET }}")
+          
           echo "HTTP Status: $RESPONSE"
           cat /tmp/response.json
+          
+          # Validasi ketat, jika bukan 200 OK, gagalkan action-nya (merah)
           if [ "$RESPONSE" != "200" ]; then
             echo "Agent failed with status $RESPONSE"
             exit 1
