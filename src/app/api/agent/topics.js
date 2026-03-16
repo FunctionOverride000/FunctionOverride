@@ -32,7 +32,7 @@ export const AGENT_TOPICS = [
 ];
 
 // Berapa artikel yang digenerate per run
-export const ARTICLES_PER_RUN = 2;
+export const ARTICLES_PER_RUN = 1
 
 // Bahasa artikel
 export const ARTICLE_LANGUAGE = 'Indonesian'; // atau 'English'
