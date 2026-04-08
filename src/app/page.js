@@ -14,6 +14,7 @@ import Footer from '../components/Footer';
 import ThemeStyles from '../components/ThemeStyles';
 import LoadingScreen from '../components/LoadingScreen';
 import TerminalBlock from '../components/TerminalBlock';
+import { AgentSection } from '@/components/AgentWidget';
 import { 
   CustomCursor, ScrollReveal, FennecLogo, LogItem 
 } from '../components/UIUtils';
@@ -473,6 +474,7 @@ export default function App() {
             </div>
           </section>
 
+          <AgentSection />
           <section id="whoami" className="relative z-10 py-20 border-t border-gray-900 bg-[#050505] bg-opacity-80">
             <div className="max-w-7xl mx-auto px-6">
               <ScrollReveal>

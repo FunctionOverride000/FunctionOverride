@@ -1,3 +1,4 @@
+import { AgentFloatingWidget } from '@/components/AgentWidget';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -81,6 +82,7 @@ export default function RootLayout({ children }) {
     <html lang="id">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
+        <AgentFloatingWidget />
         <script dangerouslySetInnerHTML={{__html: `
           if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
