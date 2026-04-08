@@ -253,8 +253,8 @@ function NewsletterForm() {
         <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-sm p-6 flex items-center gap-4">
           <CheckCircle className="w-5 h-5 text-cyan-400 shrink-0" />
           <div>
-            <p className="text-white text-sm font-bold">You're subscribed!</p>
-            <p className="text-gray-600 text-xs mt-0.5">You'll be notified when new articles are published.</p>
+            <p className="text-white text-sm font-bold">You&apos;re subscribed!</p>
+            <p className="text-gray-600 text-xs mt-0.5">You&apos;ll be notified when new articles are published.</p>
           </div>
         </div>
       </div>
@@ -417,6 +417,18 @@ export default function BlogPostClient({ post }) {
           )}
           <span className="text-gray-700">by Febri Osht</span>
         </div>
+
+        {/* Hero Image */}
+        {post.coverImage && (
+          <div className="mb-8 sm:mb-10 rounded-sm overflow-hidden border border-gray-800">
+            <img
+              src={post.coverImage}
+              alt={post.title}
+              className="w-full object-cover"
+              style={{ maxHeight: '480px' }}
+            />
+          </div>
+        )}
 
         {/* Content */}
         <div ref={contentRef} className="prose-fosht"

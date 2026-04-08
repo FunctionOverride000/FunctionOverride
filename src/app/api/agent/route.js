@@ -85,17 +85,33 @@ async function generateArticle({ topic, searchResults }, retries = 2) {
     .map((r, i) => `[${i + 1}] ${r.title}: ${r.content?.slice(0, 250) || r.snippet || ''}`)
     .join(' | ');
 
-  const prompt = `Kamu adalah jurnalis senior FOSHT (fosht.vercel.app). Tema: teknologi, crypto, market global, ekonomi Indonesia.
+const prompt = `Kamu adalah jurnalis senior FOSHT (fosht.vercel.app). Tema: teknologi, crypto, market global, ekonomi Indonesia.
 
 TOPIK: ${topic}
 BERITA TERKINI: ${sourceSummaries}
 
-Tulis artikel blog min 500 kata dalam Bahasa Indonesia. Response HARUS berupa JSON valid satu baris tanpa newline di dalam value string.
+Tulis artikel blog PANJANG dan MENDALAM min 800 kata dalam Bahasa Indonesia. Response HARUS berupa JSON valid satu baris tanpa newline di dalam value string.
 
-Format JSON yang WAJIB diikuti:
-{"title":"Judul artikel SEO-friendly max 80 karakter","excerpt":"Ringkasan artikel 1-2 kalimat menarik","tags":["tag1","tag2","tag3"],"content":"Konten HTML lengkap dengan tag <h2> untuk subheading <p> untuk paragraf <strong> untuk highlight <ul><li> untuk list. JANGAN ada newline atau tab di dalam string ini. Semua dalam satu baris.","coverImagePrompt":"English prompt for futuristic cover image","hasRealtimeData":false}
+PANDUAN KONTEN:
+- Mulai dengan intro yang menarik dan kontekstual
+- Bagi artikel menjadi minimal 5 section dengan <h2>
+- Setiap section minimal 2-3 paragraf panjang
+- Sertakan data/angka/statistik yang relevan dari berita
+- Tambahkan analisis mendalam, bukan hanya rangkuman
+- Jika topik crypto/saham/komoditas: tambahkan widget TradingView menggunakan iframe
+- Jika topik ekonomi global: tambahkan tabel perbandingan data
+- Akhiri dengan kesimpulan dan outlook ke depan
 
-PENTING: Seluruh response hanya JSON. Tidak ada teks lain. Tidak ada newline di dalam value string.`;
+WIDGET REALTIME (gunakan jika relevan):
+- Bitcoin/crypto price: <div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22BINANCE%3ABTCUSDT%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
+- S&P 500: ganti symbol ke FOREXCOM:SPXUSD
+- Gold: ganti symbol ke OANDA:XAUUSD
+- Chart mingguan BTC: <div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=BINANCE%3ABTCUSDT&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
+
+FORMAT JSON WAJIB (satu baris, NO newline dalam value):
+{"title":"Judul artikel SEO-friendly max 80 karakter","excerpt":"Ringkasan 1-2 kalimat menarik","tags":["tag1","tag2","tag3"],"content":"Konten HTML lengkap PANJANG. JANGAN ada newline atau tab di dalam string. Semua dalam satu baris.","coverImagePrompt":"Detailed English prompt for futuristic dark themed cover image","hasRealtimeData":false}
+
+PENTING: Response hanya JSON. Tidak ada teks lain. Tidak ada newline di dalam value string.`;
 
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
