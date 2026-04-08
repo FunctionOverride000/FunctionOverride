@@ -72,6 +72,7 @@ async function uploadImage(prompt, seed) {
   try {
     const encodedPrompt = encodeURIComponent(`${prompt}, dark background, cyan neon accent, futuristic tech, cinematic, 16:9`);
     const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&seed=${seed || Date.now()}`;
+    await sleep(3000);
     const cloudinaryRes = await fetch(
       `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
       {
@@ -105,7 +106,7 @@ async function generateArticle({ topic, searchResults }, retries = 2) {
 TOPIK: ${topic}
 BERITA TERKINI: ${sourceSummaries}
 
-Tulis artikel blog PANJANG, MENDALAM, dan INTERAKTIF min 900 kata dalam Bahasa Indonesia.
+Tulis artikel blog SANGAT PANJANG, MENDALAM, dan INTERAKTIF WAJIB MINIMAL 1200 kata dalam Bahasa Indonesia.
 Response HARUS berupa JSON valid SATU BARIS tanpa newline di dalam value string.
 
 PANDUAN KONTEN & INTERAKTIVITAS:
