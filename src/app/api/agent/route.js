@@ -129,12 +129,7 @@ PENTING: Seluruh response hanya JSON. Tidak ada teks lain. Tidak ada newline di 
 
 async function generateCoverImage(prompt) {
   const encodedPrompt = encodeURIComponent(`${prompt}, dark background, cyan accent, futuristic, 16:9`);
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&seed=${Date.now()}`;
-  try {
-    const check = await fetch(imageUrl, { method: 'HEAD', signal: AbortSignal.timeout(4000) });
-    if (check.ok) return imageUrl;
-  } catch {}
-  return null;
+  return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&seed=${Date.now()}`;
 }
 
 async function slugExists(db, slug) {
