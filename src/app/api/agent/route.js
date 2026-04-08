@@ -4,8 +4,8 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { AGENT_TOPICS, ARTICLES_PER_RUN } from './topics';
 
-export const dynamic = 'force-dynamic'; 
-export const maxDuration = 60; 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 function getAdminDb() {
   if (!getApps().length) {
@@ -39,7 +39,7 @@ async function searchNews(query) {
       search_depth: 'advanced',
       include_answer: true,
       include_raw_content: false,
-      max_results: 3, // LEAD DEV FIX: Turunkan dari 5 ke 3 agar lebih cepat
+      max_results: 3,
       topic: 'news',
     }),
   });
@@ -49,27 +49,55 @@ async function searchNews(query) {
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+function safeParseJSON(text) {
+  // Step 1: remove markdown fences
+  let raw = text.replace(/```json|```/g, '').trim();
+
+  // Step 2: extract JSON object
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No JSON object found in response');
+  let jsonStr = match[0];
+
+  // Step 3: try direct parse first
+  try { return JSON.parse(jsonStr); } catch (_) {}
+
+  // Step 4: replace literal newlines/tabs INSIDE string values only
+  // We do this by replacing all raw \n \r \t with space (safe for HTML content)
+  jsonStr = jsonStr
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip bad control chars
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, ' ')
+    .replace(/\t/g, ' ');
+
+  try { return JSON.parse(jsonStr); } catch (_) {}
+
+  // Step 5: fix unclosed braces
+  let open  = (jsonStr.match(/\{/g) || []).length;
+  let close = (jsonStr.match(/\}/g) || []).length;
+  while (close < open) { jsonStr += '}'; close++; }
+
+  return JSON.parse(jsonStr);
+}
+
 async function generateArticle({ topic, searchResults }, retries = 2) {
   const sourceSummaries = searchResults.results
     .slice(0, 3)
-    .map((r, i) => `[${i + 1}] ${r.title}\n${r.content?.slice(0, 300) || r.snippet || ''}`)
-    .join('\n\n');
+    .map((r, i) => `[${i + 1}] ${r.title}: ${r.content?.slice(0, 250) || r.snippet || ''}`)
+    .join(' | ');
 
-  const prompt = `Kamu jurnalis FOSHT (fosht.vercel.app). Tema: teknologi/crypto/market. Target: investor pemula-menengah.
+  const prompt = `Kamu adalah jurnalis senior FOSHT (fosht.vercel.app). Tema: teknologi, crypto, market global, ekonomi Indonesia.
+
 TOPIK: ${topic}
 BERITA TERKINI: ${sourceSummaries}
 
-Tulis artikel min 500 kata. WAJIB HANYA format JSON:
-{
-  "title": "Judul SEO (max 80 char)",
-  "excerpt": "Ringkasan 2 kalimat",
-  "tags": ["tag1", "tag2"],
-  "content": "Konten HTML lengkap (<h2>, <p>, <strong>, <ul><li>). Tanpa markdown.",
-  "coverImagePrompt": "Prompt Inggris untuk gambar (futuristic style)",
-  "hasRealtimeData": true
-}`;
+Tulis artikel blog min 500 kata dalam Bahasa Indonesia. Response HARUS berupa JSON valid satu baris tanpa newline di dalam value string.
 
-const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+Format JSON yang WAJIB diikuti:
+{"title":"Judul artikel SEO-friendly max 80 karakter","excerpt":"Ringkasan artikel 1-2 kalimat menarik","tags":["tag1","tag2","tag3"],"content":"Konten HTML lengkap dengan tag <h2> untuk subheading <p> untuk paragraf <strong> untuk highlight <ul><li> untuk list. JANGAN ada newline atau tab di dalam string ini. Semua dalam satu baris.","coverImagePrompt":"English prompt for futuristic cover image","hasRealtimeData":false}
+
+PENTING: Seluruh response hanya JSON. Tidak ada teks lain. Tidak ada newline di dalam value string.`;
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -85,40 +113,27 @@ const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
 
   if (!res.ok) {
     if (res.status === 429 && retries > 0) {
-      console.log(`[Agent] Gemini 429. Retrying in 2s...`);
-      await sleep(2000); // LEAD DEV FIX: Ubah tidur dari 30 DETIK menjadi 2 DETIK saja
+      console.log(`[Agent] Groq 429. Retrying in 5s...`);
+      await sleep(5000);
       return generateArticle({ topic, searchResults }, retries - 1);
     }
-    throw new Error(`Gemini error: ${res.status}`);
+    throw new Error(`Groq error: ${res.status}`);
   }
+
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error('Gemini returned empty response');
+  if (!text) throw new Error('Groq returned empty response');
 
-  let clean = text.replace(/```json|```/g, '').trim();
-  try { return JSON.parse(clean); } catch {
-    const match = clean.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { return JSON.parse(match[0]); } catch {
-        let fixed = match[0];
-        let open = (fixed.match(/\{/g) || []).length;
-        let close = (fixed.match(/\}/g) || []).length;
-        while (close < open) { fixed += '}'; close++; }
-        return JSON.parse(fixed);
-      }
-    }
-    throw new Error('Failed to parse JSON');
-  }
+  return safeParseJSON(text);
 }
 
 async function generateCoverImage(prompt) {
-  const encodedPrompt = encodeURIComponent(`${prompt}, cyan accent, futuristic, 16:9`);
+  const encodedPrompt = encodeURIComponent(`${prompt}, dark background, cyan accent, futuristic, 16:9`);
   const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&seed=${Date.now()}`;
   try {
-    // LEAD DEV FIX: Timeout dipersingkat jadi 4 detik (jangan 8 detik)
     const check = await fetch(imageUrl, { method: 'HEAD', signal: AbortSignal.timeout(4000) });
     if (check.ok) return imageUrl;
-  } catch { }
+  } catch {}
   return null;
 }
 
@@ -161,7 +176,7 @@ export async function POST(request) {
 
     const db = getAdminDb();
     const results = [];
-    const topics  = pickTopics(AGENT_TOPICS, ARTICLES_PER_RUN);
+    const topics = pickTopics(AGENT_TOPICS, ARTICLES_PER_RUN);
 
     for (const topic of topics) {
       try {
@@ -173,7 +188,7 @@ export async function POST(request) {
         }
 
         const article = await generateArticle({ topic, searchResults: searchData });
-        
+
         let coverImage = null;
         if (article.hasRealtimeData) {
           const imgResult = searchData.results.find(r => r.url?.match(/\.(jpg|png|webp)/i));
@@ -186,15 +201,13 @@ export async function POST(request) {
         const publishResult = await publishArticle(db, article, coverImage);
         results.push({ topic, ...publishResult });
 
-        // LEAD DEV FIX: Hapus sleep(2000) di sini. Tidak perlu delay jika cuma 1 artikel
-
       } catch (err) {
         console.error(`[Agent] Error on "${topic}":`, err.message);
         results.push({ topic, error: err.message });
       }
     }
 
-    return NextResponse.json({ status: "success", processed: topics.length, results }, { status: 200 });
+    return NextResponse.json({ status: 'success', processed: topics.length, results }, { status: 200 });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
