@@ -128,8 +128,33 @@ PENTING: Seluruh response hanya JSON. Tidak ada teks lain. Tidak ada newline di 
 }
 
 async function generateCoverImage(prompt) {
+  try {
+    const encodedPrompt = encodeURIComponent(`${prompt}, dark background, cyan accent, futuristic, 16:9`);
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&seed=${Date.now()}`;
+    
+    // Upload ke Cloudinary supaya gambar tersimpan permanen
+    const cloudinaryRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: pollinationsUrl,
+          upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+          folder: 'fosht-blog/ai-agent',
+        }),
+      }
+    );
+    
+    if (cloudinaryRes.ok) {
+      const data = await cloudinaryRes.json();
+      return data.secure_url;
+    }
+  } catch {}
+  
+  // Fallback: langsung pakai pollinations URL
   const encodedPrompt = encodeURIComponent(`${prompt}, dark background, cyan accent, futuristic, 16:9`);
-  return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&seed=${Date.now()}`;
+  return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true`;
 }
 
 async function slugExists(db, slug) {
