@@ -69,21 +69,19 @@ Tulis artikel min 500 kata. WAJIB HANYA format JSON:
   "hasRealtimeData": true
 }`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7, // Kurangi dikit agar lebih cepat dan deterministik
-          maxOutputTokens: 2048, // LEAD DEV FIX: Jangan 8192, terlalu berat
-          responseMimeType: 'application/json',
-        },
-      }),
-    }
-  );
+const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 4096,
+    }),
+  });
 
   if (!res.ok) {
     if (res.status === 429 && retries > 0) {
@@ -94,7 +92,7 @@ Tulis artikel min 500 kata. WAJIB HANYA format JSON:
     throw new Error(`Gemini error: ${res.status}`);
   }
   const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = data.choices?.[0]?.message?.content;
   if (!text) throw new Error('Gemini returned empty response');
 
   let clean = text.replace(/```json|```/g, '').trim();
