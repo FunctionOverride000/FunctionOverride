@@ -202,3 +202,8 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// Alias GET → POST supaya cron-job.org bisa trigger via GET
+export async function GET(request) {
+  return POST(request);
+}
