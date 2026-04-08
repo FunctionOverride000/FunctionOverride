@@ -167,6 +167,8 @@ export default function RichEditor({ content, onChange }) {
   const [codeValue, setCodeValue]   = useState(content || '');
   const [uploading, setUploading]   = useState(false);
   const [uploadPct, setUploadPct]   = useState(0);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
+  const fileUrlRef = useRef();
   const [imgToolbar, setImgToolbar] = useState({
     visible: false, top: 0, left: 0, align: 'none', width: '100%',
   });
@@ -269,6 +271,31 @@ export default function RichEditor({ content, onChange }) {
     xhr.send(fd);
   }, [insertImage]);
 
+  const uploadForUrl = useCallback((e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  e.target.value = '';
+  if (!file.type.startsWith('image/')) { alert('File harus berupa gambar.'); return; }
+  if (file.size > 10 * 1024 * 1024) { alert('Maksimal 10MB.'); return; }
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  fd.append('folder', 'fosht-blog');
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+  setUploading(true); setUploadPct(0);
+  xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) setUploadPct(Math.round(ev.loaded/ev.total*100)); };
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      const url = JSON.parse(xhr.responseText).secure_url;
+      setUploadedUrl(url);
+    } else alert('Gagal upload.');
+    setUploading(false); setUploadPct(0);
+  };
+  xhr.onerror = () => { alert('Gagal upload.'); setUploading(false); };
+  xhr.send(fd);
+}, []);
+
   const setLink = useCallback(() => {
     const prev = editor?.getAttributes('link').href;
     const url  = window.prompt('URL:', prev || 'https://');
@@ -329,6 +356,9 @@ export default function RichEditor({ content, onChange }) {
               : <span className="text-[10px] font-bold">IMG↑</span>}
           </ToolBtn>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={addImageFile}/>
+          <ToolBtn onClick={()=>fileUrlRef.current?.click()} disabled={uploading} title="Upload → Dapat URL">
+            <span className="text-[10px] font-bold">URL↑</span></ToolBtn>
+            <input ref={fileUrlRef} type="file" accept="image/*" className="hidden" onChange={uploadForUrl}/>
           <Divider/>
           <ToolBtn onClick={()=>editor.chain().focus().setHorizontalRule().run()} title="Garis"><Minus className="w-4 h-4"/></ToolBtn>
         </>)}
@@ -370,6 +400,34 @@ export default function RichEditor({ content, onChange }) {
               <ImgBtn onClick={deleteImg} danger title="Hapus"><Trash2 className="w-3.5 h-3.5"/></ImgBtn>
             </div>
           )}
+
+          {uploadedUrl && (
+  <div className="mb-4 p-3 bg-[#0a0f1e] border border-cyan-500/30 rounded-sm">
+    <p className="text-[10px] text-gray-500 tracking-widest mb-2">URL GAMBAR BERHASIL DIUPLOAD</p>
+    <div className="flex items-center gap-2">
+      <input
+        readOnly
+        value={uploadedUrl}
+        className="flex-1 bg-black/40 border border-gray-800 text-cyan-400 text-[11px] font-mono px-2 py-1.5 rounded-sm outline-none"
+        onClick={e => e.target.select()}
+      />
+      <button
+        type="button"
+        onClick={() => { navigator.clipboard.writeText(uploadedUrl); alert('URL disalin!'); }}
+        className="text-[10px] px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-sm hover:bg-cyan-500/20"
+      >
+        Copy
+      </button>
+      <button
+        type="button"
+        onClick={() => setUploadedUrl(null)}
+        className="text-[10px] px-2 py-1.5 text-gray-600 hover:text-white"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+)}
 
           <EditorContent editor={editor}/>
           <p className="text-[10px] text-gray-700 mt-4 border-t border-gray-900 pt-3">
