@@ -471,13 +471,13 @@ export default function BlogPage() {
             <div className="flex items-center gap-3 w-full">
               <div className="h-px flex-1 bg-gray-900" />
               <span className="text-[10px] text-gray-700 tracking-[2px]">
-                +{filtered.length - HOME_LIMIT} ARTIKEL LAINNYA
+                +{filtered.length - HOME_LIMIT} MORE ARTICLES
               </span>
               <div className="h-px flex-1 bg-gray-900" />
             </div>
-            <Link href="/blog/semua"
+            <Link href="/blog/fosht-blog"
               className="inline-flex items-center gap-2 px-8 py-3 bg-cyan-500/5 border border-cyan-500/25 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 rounded-sm transition-all text-xs font-bold tracking-wider group">
-              <span>Lihat Semua {posts.length} Artikel</span>
+              <span>View All {posts.length} Articles</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -486,7 +486,7 @@ export default function BlogPage() {
         {/* ── FOOTER INFO ── */}
         {!loading && posts.length > 0 && (
           <div className="mt-8 pt-6 border-t border-gray-900 flex items-center justify-between text-[10px] text-gray-800">
-            <span>{posts.length} artikel · diperbarui otomatis</span>
+            <span>{posts.length} articles · updated automatically</span>
             {trendLoaded && (
               <span className="flex items-center gap-1">
                 <Zap className="w-2.5 h-2.5 text-orange-800" />
