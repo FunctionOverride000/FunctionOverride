@@ -24,9 +24,30 @@ function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 80);
 }
 
-function pickTopics(topics, count) {
-  const shuffled = [...topics].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+// ── Topic tracking — pilih topik yang belum dipakai hari ini
+async function pickUnusedTopic(db, topics) {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const docRef = db.collection('agent_state').doc(`used_topics_${today}`);
+  const snap = await docRef.get();
+  const used = snap.exists ? (snap.data().topics || []) : [];
+
+  // Filter topik yang belum dipakai hari ini
+  const available = topics.filter(t => !used.includes(t));
+
+  // Kalau semua sudah dipakai hari ini, reset (pakai semua lagi)
+  const pool = available.length > 0 ? available : topics;
+
+  // Pilih random dari pool
+  const chosen = pool[Math.floor(Math.random() * pool.length)];
+
+  // Simpan topik yang dipilih
+  await docRef.set({
+    topics: [...new Set([...used, chosen])],
+    date: today,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  return chosen;
 }
 
 async function searchNews(query) {
@@ -74,75 +95,93 @@ function generateImageUrl(prompt, seed) {
   return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&model=flux&seed=${seed || Date.now()}`;
 }
 
+// ── Inject widget berdasarkan topik (programatik, tidak bergantung AI)
+function injectWidgets(content, topic) {
+  const t = topic.toLowerCase();
+  let widgets = '';
+
+  // Tentukan widget berdasarkan kata kunci topik
+  if (t.includes('bitcoin') || t.includes('btc')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22BINANCE%3ABTCUSDT%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=BINANCE%3ABTCUSDT&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('ethereum') || t.includes('eth')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22BINANCE%3AETHUSDT%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=BINANCE%3AETHUSDT&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('crypto') || t.includes('web3') || t.includes('blockchain') || t.includes('defi') || t.includes('altcoin')) {
+    widgets += `<div style="margin:2em 0;"><script src="https://widgets.coingecko.com/coingecko-coin-list-widget.js"></script><coingecko-coin-list-widget coin-ids="bitcoin,ethereum,solana,bnb,ripple" currency="usd" locale="id" background-color="#050505"></coingecko-coin-list-widget></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22CRYPTOCAP%3ABTC.D%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('gold') || t.includes('emas')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22OANDA%3AXAUUSD%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=OANDA%3AXAUUSD&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('oil') || t.includes('minyak') || t.includes('opec')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22OANDA%3AWTICOUSD%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=OANDA%3AWTICOUSD&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('s&p') || t.includes('nasdaq') || t.includes('stock') || t.includes('wall street') || t.includes('nyse')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22FOREXCOM%3ASPXUSD%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=FOREXCOM%3ASPXUSD&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('rupiah') || t.includes('idr') || t.includes('kurs') || t.includes('dollar') || t.includes('ihsg') || t.includes('indonesia market') || t.includes('bursa')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22FOREXCOM%3AUSDIDR%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=IDX%3ACOMPOSITE&interval=D&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('federal reserve') || t.includes('fed') || t.includes('inflation') || t.includes('cpi') || t.includes('macro') || t.includes('ekonomi global') || t.includes('global economic')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:350px;"><iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&importance=3&features=datepicker,timezone&theme=dark&lang=56&timezone=28" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22FOREXCOM%3ASPXUSD%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('nikkei') || t.includes('japan') || t.includes('tokyo')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=TVC%3ANI225&interval=D&theme=dark&style=1&timezone=Asia%2FTokyo&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('china') || t.includes('shanghai') || t.includes('hang seng')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=SSE%3A000001&interval=D&theme=dark&style=1&timezone=Asia%2FShanghai&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else if (t.includes('london') || t.includes('ftse') || t.includes('europe')) {
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=TVC%3AUKX&interval=D&theme=dark&style=1&timezone=Europe%2FLondon&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  } else {
+    // Default: kalender ekonomi untuk topik makro/umum
+    widgets += `<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:350px;"><iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&importance=3&features=datepicker,timezone&theme=dark&lang=56&timezone=28" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>`;
+  }
+
+  // Inject widget setelah h2 pertama yang ada di konten
+  const firstH2 = content.indexOf('</h2>');
+  if (firstH2 !== -1 && widgets) {
+    const insertPos = firstH2 + 5;
+    content = content.slice(0, insertPos) + widgets + content.slice(insertPos);
+  }
+
+  return content;
+}
+
 async function generateArticle({ topic, searchResults }, retries = 2) {
   const sourceSummaries = searchResults.results
     .slice(0, 5)
-    .map((r, i) => `[${i + 1}] ${r.title}: ${r.content?.slice(0, 400) || r.snippet || ''}`)
+    .map((r, i) => `[${i + 1}] JUDUL: ${r.title} | ISI: ${r.content?.slice(0, 400) || r.snippet || ''}`)
     .join('\n');
 
-  const tavily_answer = searchResults.answer || '';
+  const tavily_answer = searchResults.answer ? `RINGKASAN OTOMATIS: ${searchResults.answer}` : '';
 
-  const systemPrompt = `Kamu adalah jurnalis profesional senior FOSHT yang menulis tentang teknologi, crypto, market global, dan ekonomi Indonesia. WAJIB menulis artikel SANGAT PANJANG minimal 1200 kata dengan analisis mendalam. WAJIB gunakan data dari berita yang diberikan, bukan dari memori training. WAJIB sertakan widget realtime jika topik berkaitan dengan keuangan. Response HARUS JSON valid satu baris tanpa newline dalam value.`;
+  const systemPrompt = `Kamu adalah jurnalis profesional FOSHT. Tugas: riset berita → tulis artikel panjang berbasis fakta dari berita yang diberikan. WAJIB: artikel minimal 1200 kata, gunakan data dari berita (bukan memori lama), jangan repetitif. Response: JSON valid satu baris.`;
 
-  const userPrompt = `TOPIK: ${topic}
+  const userPrompt = `TOPIK RISET: ${topic}
 
-RINGKASAN BERITA (dari Tavily, data terkini):
 ${tavily_answer}
 
-DETAIL BERITA TERKINI:
+HASIL RISET TERBARU:
 ${sourceSummaries}
 
-INSTRUKSI KRITIS - BACA BAIK-BAIK:
-1. WAJIB gunakan angka/data PERSIS dari berita di atas. Jangan gunakan data dari memorimu yang mungkin sudah outdated.
-2. Jika berita menyebut harga/kurs/angka spesifik, WAJIB pakai angka itu.
-3. Jika tidak ada angka spesifik di berita, tulis analisis tanpa menyebut angka pasti.
+TULIS ARTIKEL berdasarkan riset di atas. WAJIB:
+1. Gunakan fakta/angka PERSIS dari berita di atas — jangan pakai data dari memorimu
+2. Minimal 1200 kata, 6 section berbeda (JANGAN repetitif)
+3. Setiap section punya sudut pandang berbeda
+4. Sisipkan {{IMAGE_1}} di section ke-2 dan {{IMAGE_2}} di section ke-4
 
-Tulis artikel SANGAT PANJANG minimal 1200 kata dalam Bahasa Indonesia.
+ELEMEN HTML INTERAKTIF (copy paste, isi dengan data dari berita):
 
-STRUKTUR WAJIB:
-- Intro 3-4 paragraf panjang dengan konteks global dan lokal
-- Minimal 6 section <h2>, masing-masing minimal 3 paragraf
-- Kesimpulan + outlook + blockquote
+Stat box 3 kolom:
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin:1.5em 0;"><div style="flex:1;min-width:120px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:1.8em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div><div style="flex:1;min-width:120px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:1.8em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div><div style="flex:1;min-width:120px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:1.8em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div></div>
 
-ELEMEN INTERAKTIF WAJIB (copy paste HTML ini, isi dengan data dari berita):
+Insight box: <div style="background:#0a0f1e;border-left:3px solid #00f3ff;border-radius:0 6px 6px 0;padding:16px 20px;margin:1.5em 0;"><strong style="color:#00f3ff;font-size:11px;letter-spacing:2px;">💡 INSIGHT</strong><p style="margin:8px 0 0;color:#ccc;font-size:14px;">ISI</p></div>
 
-STAT BOX (untuk angka penting dari berita):
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin:1.5em 0;"><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div></div>
+Warning box: <div style="background:#1a0a0a;border-left:3px solid #ff6b6b;border-radius:0 6px 6px 0;padding:16px 20px;margin:1.5em 0;"><strong style="color:#ff6b6b;font-size:11px;letter-spacing:2px;">⚠ PERHATIAN</strong><p style="margin:8px 0 0;color:#ccc;font-size:14px;">ISI</p></div>
 
-INSIGHT BOX:
-<div style="background:#0a0f1e;border-left:3px solid #00f3ff;border-radius:0 6px 6px 0;padding:16px 20px;margin:1.5em 0;"><strong style="color:#00f3ff;font-size:11px;letter-spacing:2px;">💡 INSIGHT</strong><p style="margin:8px 0 0;color:#ccc;font-size:14px;">ISI INSIGHT</p></div>
+Progress bar: <div style="margin:1em 0;"><div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:4px;"><span>LABEL</span><span style="color:#00f3ff;">XX%</span></div><div style="background:#111;border-radius:3px;height:6px;"><div style="background:linear-gradient(90deg,#00f3ff,#0080ff);height:6px;border-radius:3px;width:XX%;"></div></div></div>
 
-WARNING BOX:
-<div style="background:#1a0a0a;border-left:3px solid #ff6b6b;border-radius:0 6px 6px 0;padding:16px 20px;margin:1.5em 0;"><strong style="color:#ff6b6b;font-size:11px;letter-spacing:2px;">⚠ PERHATIAN</strong><p style="margin:8px 0 0;color:#ccc;font-size:14px;">ISI WARNING</p></div>
-
-PLACEHOLDER GAMBAR (taruh di section ke-2 dan ke-4):
-{{IMAGE_1}}
-<p style="text-align:center;font-size:12px;color:#555;margin-top:-1em;">CAPTION GAMBAR 1</p>
-{{IMAGE_2}}
-<p style="text-align:center;font-size:12px;color:#555;margin-top:-1em;">CAPTION GAMBAR 2</p>
-
-WIDGET REALTIME — PILIH SESUAI TOPIK DAN GUNAKAN SATU ATAU LEBIH:
-
-TradingView single quote (ganti SYMBOL):
-<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22SYMBOL%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
-
-TradingView chart weekly (ganti SYMBOL):
-<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=SYMBOL&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
-
-CoinGecko crypto price chart (ganti COIN-ID misal bitcoin/ethereum/solana):
-<div style="margin:2em 0;"><script src="https://widgets.coingecko.com/coingecko-coin-price-chart-widget.js"></script><coingecko-coin-price-chart-widget coin-id="COIN-ID" currency="usd" height="300" locale="id" background-color="#050505"></coingecko-coin-price-chart-widget></div>
-
-CoinGecko market cap (untuk overview crypto market):
-<div style="margin:2em 0;"><script src="https://widgets.coingecko.com/coingecko-coin-list-widget.js"></script><coingecko-coin-list-widget coin-ids="bitcoin,ethereum,solana,bnb,ripple" currency="usd" locale="id" background-color="#050505"></coingecko-coin-list-widget></div>
-
-Investing.com economic calendar (untuk topik makro ekonomi):
-<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:350px;"><iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&importance=3&features=datepicker,timezone&theme=dark&lang=56&timezone=28" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
-
-SYMBOL TradingView lengkap:
-Bitcoin=BINANCE:BTCUSDT | Ethereum=BINANCE:ETHUSDT | BNB=BINANCE:BNBUSDT | Solana=BINANCE:SOLUSDT | XRP=BINANCE:XRPUSDT | DOGE=BINANCE:DOGEUSDT | S&P500=FOREXCOM:SPXUSD | Nasdaq=FOREXCOM:NSXUSD | DowJones=FOREXCOM:DJI | Gold=OANDA:XAUUSD | Silver=OANDA:XAGUSD | OilWTI=OANDA:WTICOUSD | OilBrent=OANDA:BCOUSD | EURUSD=FOREXCOM:EURUSD | GBPUSD=FOREXCOM:GBPUSD | USDIDR=FOREXCOM:USDIDR | IHSG=IDX:COMPOSITE | BTCDominance=CRYPTOCAP:BTC.D | Shanghai=SSE:000001 | Nikkei=TVC:NI225 | FTSE=TVC:UKX | HangSeng=TVC:HSI
-
-FORMAT JSON WAJIB (SATU BARIS, NO NEWLINE DALAM VALUE):
-{"title":"Judul SEO max 80 karakter","excerpt":"Ringkasan 1-2 kalimat max 160 karakter","tags":["tag1","tag2","tag3","tag4"],"content":"KONTEN HTML SANGAT PANJANG. Gunakan data dari berita. Sertakan widget. Taruh IMAGE_1 dan IMAGE_2. NO newline.","coverImagePrompt":"Cinematic English prompt for cover image","imagePrompt2":"Different angle English prompt for 2nd image","hasRealtimeData":false}`;
+FORMAT JSON (satu baris, NO newline dalam value):
+{"title":"Judul max 80 karakter","excerpt":"Ringkasan max 160 karakter","tags":["tag1","tag2","tag3","tag4"],"content":"HTML PANJANG, semua dalam satu baris, gunakan elemen di atas, sisipkan IMAGE_1 dan IMAGE_2","coverImagePrompt":"Cinematic English prompt cover image","imagePrompt2":"Different English prompt 2nd image","hasRealtimeData":false}`;
 
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -163,7 +202,6 @@ FORMAT JSON WAJIB (SATU BARIS, NO NEWLINE DALAM VALUE):
 
   if (!res.ok) {
     if (res.status === 429 && retries > 0) {
-      console.log(`[Agent] Groq 429. Retrying in 5s...`);
       await sleep(5000);
       return generateArticle({ topic, searchResults }, retries - 1);
     }
@@ -182,24 +220,26 @@ async function slugExists(db, slug) {
   return !snap.empty;
 }
 
-async function publishArticle(db, article, coverImage, img2) {
+async function publishArticle(db, article, coverImage, img2, topic) {
   const slug = slugify(article.title);
   if (await slugExists(db, slug)) return { skipped: true, reason: 'duplicate slug', slug };
 
   let content = article.content || '';
 
-  if (img2) {
-    content = content.replace(
-      /\{\{IMAGE_1\}\}/g,
-      `<img src="${img2}" alt="Ilustrasi artikel" style="width:100%;max-width:100%;border-radius:8px;border:1px solid rgba(0,243,255,0.1);margin:1.5em 0;" />`
-    );
-  }
-  const img2b = generateImageUrl(article.imagePrompt2 || article.coverImagePrompt || 'futuristic finance technology', Date.now() + 999);
+  // Replace image placeholders
+  content = content.replace(
+    /\{\{IMAGE_1\}\}/g,
+    `<img src="${img2}" alt="Ilustrasi artikel" style="width:100%;max-width:100%;border-radius:8px;border:1px solid rgba(0,243,255,0.1);margin:1.5em 0;" />`
+  );
+  const img2b = generateImageUrl(article.imagePrompt2 || article.coverImagePrompt || topic, Date.now() + 999);
   content = content.replace(
     /\{\{IMAGE_2\}\}/g,
     `<img src="${img2b}" alt="Ilustrasi artikel" style="width:100%;max-width:100%;border-radius:8px;border:1px solid rgba(0,243,255,0.1);margin:1.5em 0;" />`
   );
   content = content.replace(/\{\{IMAGE_[123]\}\}/g, '');
+
+  // Inject widget programatik
+  content = injectWidgets(content, topic);
 
   const doc = {
     title:      article.title,
@@ -231,11 +271,13 @@ export async function POST(request) {
 
     const db = getAdminDb();
     const results = [];
-    const topics = pickTopics(AGENT_TOPICS, ARTICLES_PER_RUN);
 
-    for (const topic of topics) {
+    for (let i = 0; i < ARTICLES_PER_RUN; i++) {
       try {
+        // Pilih topik yang belum dipakai hari ini
+        const topic = await pickUnusedTopic(db, AGENT_TOPICS);
         console.log(`[Agent] Processing: ${topic}`);
+
         const searchData = await searchNews(topic);
         if (!searchData.results?.length) {
           results.push({ topic, error: 'No search results' });
@@ -248,16 +290,16 @@ export async function POST(request) {
         const coverImage = generateImageUrl(article.coverImagePrompt || topic, seed);
         const img2       = generateImageUrl(article.imagePrompt2 || article.coverImagePrompt || topic, seed + 500);
 
-        const publishResult = await publishArticle(db, article, coverImage, img2);
+        const publishResult = await publishArticle(db, article, coverImage, img2, topic);
         results.push({ topic, ...publishResult });
 
       } catch (err) {
-        console.error(`[Agent] Error on "${topic}":`, err.message);
-        results.push({ topic, error: err.message });
+        console.error(`[Agent] Error:`, err.message);
+        results.push({ error: err.message });
       }
     }
 
-    return NextResponse.json({ status: 'success', processed: topics.length, results }, { status: 200 });
+    return NextResponse.json({ status: 'success', processed: ARTICLES_PER_RUN, results }, { status: 200 });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
