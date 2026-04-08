@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { 
   Mail, Phone, MapPin, Linkedin, Globe, 
   Briefcase, GraduationCap, Code, Sparkles, 
@@ -80,8 +81,8 @@ export default function App() {
             
             <div className="space-y-3">
               <a
-                href="/CV_Febriansyah_2026_v2.pdf"
-                download="CV_Febriansyah_2026_Indonesia.pdf"
+                href="/CV_Febriansyah2026_v3.pdf"
+                download="CV_Febriansyah2026_v3.pdf"
                 onClick={() => setShowCVModal(false)}
                 className="flex items-center gap-4 w-full p-4 bg-gray-800 hover:bg-teal-500/10 border border-gray-700 hover:border-teal-500/50 rounded-xl transition-all duration-300 group"
               >
@@ -96,8 +97,8 @@ export default function App() {
               </a>
 
               <a
-                href="/CV_Febriansyah_2026_v2_EN.pdf"
-                download="CV_Febriansyah_2026_English.pdf"
+                href="/CV_Febriansyah_2026_v3_EN.pdf"
+                download="CV_Febriansyah_2026_v3_EN.pdf"
                 onClick={() => setShowCVModal(false)}
                 className="flex items-center gap-4 w-full p-4 bg-gray-800 hover:bg-blue-500/10 border border-gray-700 hover:border-blue-500/50 rounded-xl transition-all duration-300 group"
               >
@@ -454,10 +455,10 @@ export default function App() {
           </div>
 
           <div className="flex justify-center mt-8">
-            <a href="/#modules" className="group inline-flex items-center gap-3 px-6 py-3.5 bg-gray-900 border border-purple-500/30 hover:border-purple-500 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+            <Link href="/#modules" className="group inline-flex items-center gap-3 px-6 py-3.5 bg-gray-900 border border-purple-500/30 hover:border-purple-500 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
               <span className="font-bold tracking-wide text-sm sm:text-base">Lihat Semua Proyek di Active Modules</span>
               <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />
-            </a>
+            </Link>
           </div>
         </section>
 
