@@ -67,7 +67,6 @@ function safeParseJSON(text) {
   return JSON.parse(jsonStr);
 }
 
-// ── Generate image URL via Pollinations (langsung, tanpa upload Cloudinary)
 function generateImageUrl(prompt, seed) {
   const encodedPrompt = encodeURIComponent(
     `${prompt}, dark background, cyan neon accent, futuristic tech, cinematic lighting, ultra detailed, 16:9`
@@ -78,55 +77,72 @@ function generateImageUrl(prompt, seed) {
 async function generateArticle({ topic, searchResults }, retries = 2) {
   const sourceSummaries = searchResults.results
     .slice(0, 5)
-    .map((r, i) => `[${i + 1}] ${r.title}: ${r.content?.slice(0, 300) || r.snippet || ''}`)
-    .join(' | ');
+    .map((r, i) => `[${i + 1}] ${r.title}: ${r.content?.slice(0, 400) || r.snippet || ''}`)
+    .join('\n');
 
-  const systemPrompt = `Kamu adalah jurnalis profesional senior di FOSHT (fosht.vercel.app) yang menulis tentang teknologi, crypto, market global, dan ekonomi Indonesia. WAJIB menulis artikel SANGAT PANJANG minimal 1200 kata dengan analisis mendalam dan data konkret. WAJIB menyertakan widget TradingView jika topik berkaitan dengan aset keuangan apapun. Response HARUS JSON valid satu baris tanpa newline dalam value string.`;
+  const tavily_answer = searchResults.answer || '';
+
+  const systemPrompt = `Kamu adalah jurnalis profesional senior FOSHT yang menulis tentang teknologi, crypto, market global, dan ekonomi Indonesia. WAJIB menulis artikel SANGAT PANJANG minimal 1200 kata dengan analisis mendalam. WAJIB gunakan data dari berita yang diberikan, bukan dari memori training. WAJIB sertakan widget realtime jika topik berkaitan dengan keuangan. Response HARUS JSON valid satu baris tanpa newline dalam value.`;
 
   const userPrompt = `TOPIK: ${topic}
-BERITA TERKINI: ${sourceSummaries}
 
-Tulis artikel blog SANGAT PANJANG dan MENDALAM minimal 1200 kata dalam Bahasa Indonesia.
+RINGKASAN BERITA (dari Tavily, data terkini):
+${tavily_answer}
 
-PANDUAN WAJIB:
-1. Intro panjang 3-4 paragraf dengan konteks global dan lokal yang kuat
-2. WAJIB minimal 6 section dengan <h2>, setiap section WAJIB minimal 3 paragraf panjang
-3. Sertakan data/angka/statistik spesifik dari berita
-4. Analisis mendalam: sebab-akibat, dampak jangka pendek dan panjang
-5. Gunakan elemen visual HTML:
+DETAIL BERITA TERKINI:
+${sourceSummaries}
 
-STAT BOXES (gunakan untuk angka penting):
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin:1.5em 0;"><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div></div>
+INSTRUKSI KRITIS - BACA BAIK-BAIK:
+1. WAJIB gunakan angka/data PERSIS dari berita di atas. Jangan gunakan data dari memorimu yang mungkin sudah outdated.
+2. Jika berita menyebut harga/kurs/angka spesifik, WAJIB pakai angka itu.
+3. Jika tidak ada angka spesifik di berita, tulis analisis tanpa menyebut angka pasti.
+
+Tulis artikel SANGAT PANJANG minimal 1200 kata dalam Bahasa Indonesia.
+
+STRUKTUR WAJIB:
+- Intro 3-4 paragraf panjang dengan konteks global dan lokal
+- Minimal 6 section <h2>, masing-masing minimal 3 paragraf
+- Kesimpulan + outlook + blockquote
+
+ELEMEN INTERAKTIF WAJIB (copy paste HTML ini, isi dengan data dari berita):
+
+STAT BOX (untuk angka penting dari berita):
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin:1.5em 0;"><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div><div style="flex:1;min-width:140px;background:#0a0f1e;border:1px solid rgba(0,243,255,0.2);border-radius:6px;padding:16px;text-align:center;"><div style="font-size:2em;font-weight:900;color:#00f3ff;">ANGKA</div><div style="font-size:11px;color:#666;margin-top:4px;">LABEL</div></div></div>
 
 INSIGHT BOX:
-<div style="background:#0a0f1e;border-left:3px solid #00f3ff;border-radius:0 6px 6px 0;padding:16px 20px;margin:1.5em 0;"><strong style="color:#00f3ff;font-size:11px;letter-spacing:2px;">💡 INSIGHT</strong><p style="margin:8px 0 0;color:#ccc;font-size:14px;">ISI INSIGHT MENDALAM</p></div>
+<div style="background:#0a0f1e;border-left:3px solid #00f3ff;border-radius:0 6px 6px 0;padding:16px 20px;margin:1.5em 0;"><strong style="color:#00f3ff;font-size:11px;letter-spacing:2px;">💡 INSIGHT</strong><p style="margin:8px 0 0;color:#ccc;font-size:14px;">ISI INSIGHT</p></div>
 
 WARNING BOX:
 <div style="background:#1a0a0a;border-left:3px solid #ff6b6b;border-radius:0 6px 6px 0;padding:16px 20px;margin:1.5em 0;"><strong style="color:#ff6b6b;font-size:11px;letter-spacing:2px;">⚠ PERHATIAN</strong><p style="margin:8px 0 0;color:#ccc;font-size:14px;">ISI WARNING</p></div>
 
-PROGRESS BAR:
-<div style="margin:1.5em 0;"><div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:6px;"><span>LABEL</span><span style="color:#00f3ff;">NILAI%</span></div><div style="background:#111;border-radius:3px;height:6px;"><div style="background:linear-gradient(90deg,#00f3ff,#0080ff);height:6px;border-radius:3px;width:NILAI%;"></div></div></div>
+PLACEHOLDER GAMBAR (taruh di section ke-2 dan ke-4):
+{{IMAGE_1}}
+<p style="text-align:center;font-size:12px;color:#555;margin-top:-1em;">CAPTION GAMBAR 1</p>
+{{IMAGE_2}}
+<p style="text-align:center;font-size:12px;color:#555;margin-top:-1em;">CAPTION GAMBAR 2</p>
 
-6. WAJIB placeholder gambar {{IMAGE_1}} dan {{IMAGE_2}} di tengah artikel (di section ke-2 dan ke-4), diikuti caption:
-<p style="text-align:center;font-size:12px;color:#555;margin-top:-1em;">CAPTION</p>
+WIDGET REALTIME — PILIH SESUAI TOPIK DAN GUNAKAN SATU ATAU LEBIH:
 
-7. WAJIB Widget TradingView jika topik keuangan — gunakan template ini dan ganti SYMBOL:
-
-Single quote widget:
+TradingView single quote (ganti SYMBOL):
 <div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:180px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/embed-widget/single-quote/?locale=id#%7B%22symbol%22%3A%22SYMBOL%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%7D" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
 
-Chart weekly widget:
+TradingView chart weekly (ganti SYMBOL):
 <div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:450px;background:#0d0d0d;"><iframe src="https://s.tradingview.com/widgetembed/?symbol=SYMBOL&interval=W&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
 
-DAFTAR SYMBOL:
-Bitcoin=BINANCE:BTCUSDT | Ethereum=BINANCE:ETHUSDT | BNB=BINANCE:BNBUSDT | Solana=BINANCE:SOLUSDT | XRP=BINANCE:XRPUSDT | S&P500=FOREXCOM:SPXUSD | Nasdaq=FOREXCOM:NSXUSD | DowJones=FOREXCOM:DJI | Gold=OANDA:XAUUSD | Silver=OANDA:XAGUSD | OilWTI=OANDA:WTICOUSD | OilBrent=OANDA:BCOUSD | EURUSD=FOREXCOM:EURUSD | USDIDR=FOREXCOM:USDIDR | IHSG=IDX:COMPOSITE | BTCDominance=CRYPTOCAP:BTC.D | Shanghai=SSE:000001 | Nikkei=TVC:NI225 | FTSE=TVC:UKX
+CoinGecko crypto price chart (ganti COIN-ID misal bitcoin/ethereum/solana):
+<div style="margin:2em 0;"><script src="https://widgets.coingecko.com/coingecko-coin-price-chart-widget.js"></script><coingecko-coin-price-chart-widget coin-id="COIN-ID" currency="usd" height="300" locale="id" background-color="#050505"></coingecko-coin-price-chart-widget></div>
 
-8. Akhiri dengan kesimpulan panjang + outlook + blockquote
+CoinGecko market cap (untuk overview crypto market):
+<div style="margin:2em 0;"><script src="https://widgets.coingecko.com/coingecko-coin-list-widget.js"></script><coingecko-coin-list-widget coin-ids="bitcoin,ethereum,solana,bnb,ripple" currency="usd" locale="id" background-color="#050505"></coingecko-coin-list-widget></div>
+
+Investing.com economic calendar (untuk topik makro ekonomi):
+<div style="margin:2em 0;border-radius:8px;overflow:hidden;border:1px solid rgba(0,243,255,0.15);height:350px;"><iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&importance=3&features=datepicker,timezone&theme=dark&lang=56&timezone=28" width="100%" height="100%" frameborder="0" allowtransparency="true" scrolling="no"></iframe></div>
+
+SYMBOL TradingView lengkap:
+Bitcoin=BINANCE:BTCUSDT | Ethereum=BINANCE:ETHUSDT | BNB=BINANCE:BNBUSDT | Solana=BINANCE:SOLUSDT | XRP=BINANCE:XRPUSDT | DOGE=BINANCE:DOGEUSDT | S&P500=FOREXCOM:SPXUSD | Nasdaq=FOREXCOM:NSXUSD | DowJones=FOREXCOM:DJI | Gold=OANDA:XAUUSD | Silver=OANDA:XAGUSD | OilWTI=OANDA:WTICOUSD | OilBrent=OANDA:BCOUSD | EURUSD=FOREXCOM:EURUSD | GBPUSD=FOREXCOM:GBPUSD | USDIDR=FOREXCOM:USDIDR | IHSG=IDX:COMPOSITE | BTCDominance=CRYPTOCAP:BTC.D | Shanghai=SSE:000001 | Nikkei=TVC:NI225 | FTSE=TVC:UKX | HangSeng=TVC:HSI
 
 FORMAT JSON WAJIB (SATU BARIS, NO NEWLINE DALAM VALUE):
-{"title":"Judul SEO max 80 karakter","excerpt":"Ringkasan 1-2 kalimat menarik max 160 karakter","tags":["tag1","tag2","tag3","tag4"],"content":"KONTEN HTML SANGAT PANJANG MINIMAL 1200 KATA dengan semua elemen di atas. NO newline. Satu baris.","coverImagePrompt":"Detailed cinematic English prompt for cover image related to topic","imagePrompt2":"Detailed English prompt for 2nd inline image (different angle/focus)","hasRealtimeData":false}
-
-INGAT: Minimal 1200 kata. Widget TradingView WAJIB jika ada aset keuangan. Response hanya JSON.`;
+{"title":"Judul SEO max 80 karakter","excerpt":"Ringkasan 1-2 kalimat max 160 karakter","tags":["tag1","tag2","tag3","tag4"],"content":"KONTEN HTML SANGAT PANJANG. Gunakan data dari berita. Sertakan widget. Taruh IMAGE_1 dan IMAGE_2. NO newline.","coverImagePrompt":"Cinematic English prompt for cover image","imagePrompt2":"Different angle English prompt for 2nd image","hasRealtimeData":false}`;
 
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -172,20 +188,17 @@ async function publishArticle(db, article, coverImage, img2) {
 
   let content = article.content || '';
 
-  // Replace placeholders
   if (img2) {
     content = content.replace(
       /\{\{IMAGE_1\}\}/g,
       `<img src="${img2}" alt="Ilustrasi artikel" style="width:100%;max-width:100%;border-radius:8px;border:1px solid rgba(0,243,255,0.1);margin:1.5em 0;" />`
     );
   }
-  // Generate IMAGE_2 dengan seed berbeda
-  const img2b = generateImageUrl(article.imagePrompt2 || article.coverImagePrompt || 'futuristic technology', Date.now() + 999);
+  const img2b = generateImageUrl(article.imagePrompt2 || article.coverImagePrompt || 'futuristic finance technology', Date.now() + 999);
   content = content.replace(
     /\{\{IMAGE_2\}\}/g,
     `<img src="${img2b}" alt="Ilustrasi artikel" style="width:100%;max-width:100%;border-radius:8px;border:1px solid rgba(0,243,255,0.1);margin:1.5em 0;" />`
   );
-  // Hapus placeholder yang tidak terganti
   content = content.replace(/\{\{IMAGE_[123]\}\}/g, '');
 
   const doc = {
@@ -251,7 +264,6 @@ export async function POST(request) {
   }
 }
 
-// Alias GET → POST supaya cron-job.org bisa trigger via GET
 export async function GET(request) {
   return POST(request);
 }
