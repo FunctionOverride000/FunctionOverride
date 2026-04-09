@@ -1,6 +1,6 @@
-import { AgentFloatingWidget } from '@/components/AgentWidget';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AgentFloatingWidget } from '@/components/AgentWidget';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
