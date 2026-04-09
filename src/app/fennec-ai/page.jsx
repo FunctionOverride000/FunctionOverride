@@ -140,12 +140,12 @@ export default function FennecAI() {
       const snap = await getDocs(query(
         collection(db, 'posts'),
         where('source', '==', 'ai-agent'),
-        orderBy('createdAt', 'desc'),
         limit(50)
       ));
       const arts = snap.docs
         .map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate?.()?.toISOString() || null }))
-        .filter(a => a.published !== false);
+        .filter(a => a.published !== false)
+        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
       setArticles(arts);
       addLog(`${arts.length} artikel dimuat`, 'publish');
 
@@ -170,15 +170,16 @@ export default function FennecAI() {
     addLog('Menghubungkan ke Firestore...', 'search');
     fetchData();
 
-    // Realtime listener
+    // Realtime listener — tanpa orderBy, tidak butuh composite index
     try {
       const q = query(
         collection(db, 'posts'),
         where('source', '==', 'ai-agent'),
-        orderBy('createdAt', 'desc'),
         limit(1)
       );
+      let firstRun = true;
       unsubRef.current = onSnapshot(q, snap => {
+        if (firstRun) { firstRun = false; return; }
         if (!snap.empty) {
           const t = snap.docs[0].data().title;
           if (t) { addLog(`📰 Artikel baru: "${t}"`, 'publish'); fetchData(true); }
