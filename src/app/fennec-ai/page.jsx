@@ -62,7 +62,7 @@ function PulseDot({ color = '#00f3ff', size = 8 }) {
 }
 
 // ── Activity bar chart
-function ActivityBars({ data }: { data: Record<string, number> }) {
+function ActivityBars({ data }) {
   const max = Math.max(...Object.values(data), 1);
   const sorted = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0])).slice(-14);
   return (
@@ -233,8 +233,8 @@ export default function FennecAIPage() {
 
   const totalViews = allArticles.reduce((sum, a) => sum + (a.views || 0), 0);
   const allTags = allArticles.flatMap(a => a.tags || []);
-  const tagCount = allTags.reduce((acc, t) => { acc[t] = (acc[t] || 0) + 1; return acc; }, {} as Record<string, number>);
-  const topTags = Object.entries(tagCount).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 12);
+  const tagCount = allTags.reduce((acc, t) => { acc[t] = (acc[t] || 0) + 1; return acc; }, {});
+  const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 12);
 
   const uptimeStr = `${Math.floor(uptime / 3600).toString().padStart(2,'0')}:${Math.floor((uptime % 3600) / 60).toString().padStart(2,'0')}:${(uptime % 60).toString().padStart(2,'0')}`;
 
@@ -419,7 +419,7 @@ export default function FennecAIPage() {
                 <div className="bg-[#080d1a]/80 border border-cyan-500/10 rounded-sm p-4">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-[9px] text-gray-600 tracking-widest">ARTIKEL PER HARI (14 HARI)</span>
-                    <span className="text-[9px] text-cyan-500">{Object.values(articlesByDay).reduce((a: number, b) => a + (b as number), 0)} total</span>
+                    <span className="text-[9px] text-cyan-500">{Object.values(articlesByDay).reduce((a,b)=>a+b,0)} total</span>
                   </div>
                   {Object.keys(articlesByDay).length > 0 ? (
                     <ActivityBars data={articlesByDay} />
@@ -568,7 +568,7 @@ export default function FennecAIPage() {
                         <div className="flex-1 bg-gray-900 rounded-sm h-4 overflow-hidden">
                           <div className="h-full flex items-center px-2 transition-all duration-1000"
                             style={{
-                              width: `${(count / (topTags[0][1] as unknown as number)) * 100}%`,
+                              width: `${(count / topTags[0][1]) * 100}%`,
                               background: 'linear-gradient(90deg, rgba(0,243,255,0.3), rgba(0,243,255,0.08))',
                               minWidth: '28px',
                               animation: `barGrow 0.8s ease-out ${i * 60}ms both`,
