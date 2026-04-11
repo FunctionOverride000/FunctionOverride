@@ -1,0 +1,180 @@
+<!-- ============================================================
+     FOSHT BLOG — TEMPLATE KONTEN
+     Copy salah satu template di bawah ke editor HTML (mode CODE)
+     Ganti teks [PLACEHOLDER] dan upload gambar via tombol IMG↑
+     ============================================================ -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TEMPLATE 1: STANDAR — Gambar di atas, teks di bawah
+     Cocok untuk: tutorial, artikel umum, review
+     ══════════════════════════════════════════════════════════ -->
+
+<img src="GANTI_URL_GAMBAR" style="display:block; width:100%; max-width:700px; margin:0 auto 2em auto; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[DESKRIPSI GAMBAR]">
+
+<p>[PARAGRAF PEMBUKA — tulis 2-3 kalimat pengantar topik di sini. Jelaskan apa yang akan dibahas dan kenapa penting.]</p>
+
+<h2>[JUDUL SECTION 1]</h2>
+<p>[Isi konten section pertama. Bisa beberapa paragraf.]</p>
+<p>[Lanjutan paragraf jika perlu.]</p>
+
+<h2>[JUDUL SECTION 2]</h2>
+<p>[Isi konten section kedua.]</p>
+
+<h3>[Sub-section jika perlu]</h3>
+<p>[Isi sub-section.]</p>
+
+<h2>Kesimpulan</h2>
+<p>[Ringkasan dan penutup artikel.]</p>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TEMPLATE 2: SPLIT — Gambar kanan, teks mengalir di kiri
+     Cocok untuk: perkenalan produk, profil, portofolio item
+     ══════════════════════════════════════════════════════════ -->
+
+<img src="GANTI_URL_GAMBAR" style="float:right; margin:0 0 1.5em 2em; width:300px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[DESKRIPSI GAMBAR]">
+
+<p>[PARAGRAF PEMBUKA — teks ini akan mengalir di sebelah kiri gambar secara otomatis. Tulis cukup panjang agar terlihat sejajar dengan gambar.]</p>
+
+<p>[Lanjutan teks di sebelah kiri gambar. Semakin panjang paragraf, semakin rapi layoutnya.]</p>
+
+<div style="clear:both"></div>
+
+<h2>[JUDUL SECTION BERIKUTNYA]</h2>
+<p>[Konten di bawah ini sudah full width kembali setelah clear:both.]</p>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TEMPLATE 3: SPLIT KIRI — Gambar kiri, teks di kanan
+     Cocok untuk: langkah-langkah, how-to, showcase
+     ══════════════════════════════════════════════════════════ -->
+
+<img src="GANTI_URL_GAMBAR" style="float:left; margin:0 2em 1.5em 0; width:280px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[DESKRIPSI GAMBAR]">
+
+<p>[TEKS di sebelah kanan gambar. Gambar berada di sisi kiri, teks mengalir di kanan.]</p>
+
+<p>[Lanjutan paragraf kanan.]</p>
+
+<div style="clear:both"></div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TEMPLATE 4: MAGAZINE — Hero besar + konten 2 gambar inline
+     Cocok untuk: artikel panjang, liputan event, review mendalam
+     ══════════════════════════════════════════════════════════ -->
+
+<!-- Hero image full width -->
+<img src="GANTI_URL_GAMBAR_HERO" style="display:block; width:100%; border-radius:6px; margin:0 0 2em 0; border:1px solid rgba(255,255,255,0.08);" alt="[HERO IMAGE]">
+
+<p>[PARAGRAF PEMBUKA yang kuat. Buat pembaca penasaran untuk lanjut baca.]</p>
+
+<h2>[SECTION 1]</h2>
+<p>[Konten section 1 paragraf pertama.]</p>
+<p>[Konten section 1 paragraf kedua.]</p>
+
+<!-- Gambar di tengah artikel -->
+<img src="GANTI_URL_GAMBAR_2" style="display:block; width:100%; max-width:600px; margin:1.5em auto; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[GAMBAR TENGAH]">
+
+<h2>[SECTION 2]</h2>
+<p>[Konten section 2.]</p>
+
+<!-- Dua gambar berdampingan -->
+<div style="display:flex; gap:1em; margin:1.5em 0;">
+  <img src="GANTI_URL_GAMBAR_3A" style="width:50%; border-radius:6px; border:1px solid rgba(255,255,255,0.08); object-fit:cover;" alt="[GAMBAR KIRI]">
+  <img src="GANTI_URL_GAMBAR_3B" style="width:50%; border-radius:6px; border:1px solid rgba(255,255,255,0.08); object-fit:cover;" alt="[GAMBAR KANAN]">
+</div>
+
+<h2>Kesimpulan</h2>
+<p>[Penutup artikel.]</p>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TEMPLATE 5: TUTORIAL / KODE — Step by step dengan code block
+     Cocok untuk: tutorial teknis, dokumentasi, how-to coding
+     ══════════════════════════════════════════════════════════ -->
+
+<p>[INTRO — Jelaskan apa yang akan dibuat/dipelajari dan prerequisite yang dibutuhkan.]</p>
+
+<h2>Persiapan</h2>
+<p>[Jelaskan tools / environment yang dibutuhkan.]</p>
+
+<pre><code>// Install dependencies
+npm install nama-package
+
+// Atau dengan yarn
+yarn add nama-package</code></pre>
+
+<h2>Langkah 1 — [Nama Langkah]</h2>
+<p>[Penjelasan langkah pertama.]</p>
+
+<pre><code>// Contoh kode langkah 1
+const contoh = () => {
+  console.log('Hello FOSHT');
+};</code></pre>
+
+<img src="GANTI_URL_GAMBAR" style="display:block; width:100%; max-width:600px; margin:1.5em auto; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[SCREENSHOT LANGKAH 1]">
+
+<h2>Langkah 2 — [Nama Langkah]</h2>
+<p>[Penjelasan langkah kedua.]</p>
+
+<pre><code>// Kode langkah 2
+function contohDua(param) {
+  return param * 2;
+}</code></pre>
+
+<h2>Langkah 3 — [Nama Langkah]</h2>
+<p>[Penjelasan langkah ketiga.]</p>
+
+<blockquote>💡 Tip: [Masukkan tips atau catatan penting di sini menggunakan blockquote]</blockquote>
+
+<h2>Hasil Akhir</h2>
+<img src="GANTI_URL_GAMBAR_HASIL" style="display:block; width:100%; border-radius:6px; margin:1em 0 1.5em; border:1px solid rgba(255,255,255,0.08);" alt="[SCREENSHOT HASIL]">
+<p>[Deskripsi hasil akhir dan apa yang sudah berhasil dibuat.]</p>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TEMPLATE 6: LISTICLE — Daftar dengan gambar per item
+     Cocok untuk: "5 Tools Terbaik", "10 Tips", rekomendasi
+     ══════════════════════════════════════════════════════════ -->
+
+<p>[INTRO — "Berikut adalah [N] [topik] yang [alasan mengapa penting]..."]</p>
+
+<!-- Item 1 -->
+<h2>1. [NAMA ITEM PERTAMA]</h2>
+<img src="GANTI_URL_GAMBAR_1" style="float:right; margin:0 0 1em 1.5em; width:260px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[ITEM 1]">
+<p>[Deskripsi item pertama. Jelaskan keunggulan, cara pakai, atau kenapa masuk daftar ini.]</p>
+<p>[Detail tambahan item pertama.]</p>
+<div style="clear:both"></div>
+
+<!-- Item 2 -->
+<h2>2. [NAMA ITEM KEDUA]</h2>
+<img src="GANTI_URL_GAMBAR_2" style="float:left; margin:0 1.5em 1em 0; width:260px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[ITEM 2]">
+<p>[Deskripsi item kedua.]</p>
+<p>[Detail tambahan item kedua.]</p>
+<div style="clear:both"></div>
+
+<!-- Item 3 -->
+<h2>3. [NAMA ITEM KETIGA]</h2>
+<img src="GANTI_URL_GAMBAR_3" style="float:right; margin:0 0 1em 1.5em; width:260px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);" alt="[ITEM 3]">
+<p>[Deskripsi item ketiga.]</p>
+<div style="clear:both"></div>
+
+<h2>Kesimpulan</h2>
+<p>[Ringkasan dan rekomendasi akhir.]</p>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TIPS UPLOAD GAMBAR DARI KOMPUTER:
+     
+     1. Di editor admin, klik tombol [IMG↑] di toolbar
+     2. Pilih file dari komputer
+     3. Gambar akan otomatis ter-embed sebagai base64
+     4. Copy URL base64 yang muncul di editor visual
+     5. Paste ke src="..." di template HTML ini
+     
+     ATAU pakai mode VISUAL:
+     1. Klik tombol [IMG↑]
+     2. Gambar langsung muncul di editor
+     3. Switch ke mode HTML untuk atur posisi/ukurannya
+     ══════════════════════════════════════════════════════════ -->
