@@ -166,7 +166,7 @@ export default function FennecAI() {
   }, [addLog]);
 
   useEffect(() => {
-    addLog('FENNEC AI Monitor aktif', 'info');
+    addLog('FOSHT AI Monitor aktif', 'info');
     addLog('Menghubungkan ke Firestore...', 'search');
     fetchData();
 
@@ -269,7 +269,7 @@ export default function FennecAI() {
                 style={{ animation: 'pulse-ring 1.5s ease-in-out infinite' }} />
               <span className="relative inline-flex w-2 h-2 rounded-full bg-cyan-400" />
             </span>
-            <span className="text-[10px] tracking-[2px] text-cyan-500 font-bold">FENNEC AI · LIVE</span>
+            <span className="text-[10px] tracking-[2px] text-cyan-500 font-bold">FOSHT AI · LIVE</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[10px] text-gray-700 tabular-nums">{fmtUptime(uptime)}</span>
@@ -288,12 +288,12 @@ export default function FennecAI() {
           <div className="flex items-center gap-4">
             <div className="relative w-14 h-14 rounded-sm card flex items-center justify-center shrink-0"
               style={{ boxShadow: '0 0 20px rgba(0,243,255,0.08)' }}>
-              <img src="/fosht.png" alt="Fennec AI" className="w-9 h-9 object-contain" />
+              <img src="/fosht.png" alt="Fosht AI" className="w-9 h-9 object-contain" />
               <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-cyan-400"
                 style={{ boxShadow: '0 0 8px #00f3ff' }} />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">FENNEC AI</h1>
+              <h1 className="text-2xl font-black tracking-tight text-white">FOSHT AI</h1>
               <p className="text-[10px] text-cyan-500 tracking-[3px] mt-0.5">AUTONOMOUS RESEARCH & PUBLISHING AGENT</p>
               <p className="text-[9px] text-gray-600 mt-1">/sys/agent/monitor · realtime · no simulation</p>
             </div>
@@ -449,7 +449,7 @@ export default function FennecAI() {
             {tab === 'articles' && (
               <div className="space-y-1.5">
                 <p className="text-[9px] text-gray-600 tracking-widest mb-3">
-                  {articles.length} ARTIKEL DIPUBLISH OLEH FENNEC AI AGENT
+                  {articles.length} ARTIKEL DIPUBLISH OLEH FOSHT AI AGENT
                 </p>
                 {articles.map((a, i) => (
                   <Link key={a.id} href={`/blog/${a.slug}`}
