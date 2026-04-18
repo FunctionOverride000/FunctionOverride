@@ -155,8 +155,8 @@ export default function App() {
             
             {/* Quick Contact & Download */}
             <div className="flex flex-col items-center lg:items-end gap-3 text-sm text-gray-400">
-              <a href="mailto:febbriansyah01@gmail.com" className="flex items-center gap-2 hover:text-teal-400 transition-all hover:scale-105">
-                <div className="p-1.5 bg-gray-900 rounded-md"><Mail size={13} className="text-teal-500" /></div> febbriansyah01@gmail.com
+              <a href="mailto:xfebriansyah000@gmail.com" className="flex items-center gap-2 hover:text-teal-400 transition-all hover:scale-105">
+                <div className="p-1.5 bg-gray-900 rounded-md"><Mail size={13} className="text-teal-500" /></div> xfebriansyah000@gmail.com
               </a>
               <a href="https://fosht.vercel.app" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-teal-400 transition-all hover:scale-105">
                 <div className="p-1.5 bg-gray-900 rounded-md"><Globe size={13} className="text-teal-500" /></div> fosht.vercel.app
@@ -384,7 +384,7 @@ export default function App() {
                   <a href="https://fosht.vercel.app" target="_blank" rel="noreferrer" className="p-3 bg-gray-950 border border-gray-800 rounded-xl hover:bg-teal-600 hover:border-teal-600 hover:-translate-y-1 hover:text-white transition-all duration-300 text-gray-400 hover:shadow-[0_8px_20px_rgba(20,184,166,0.4)]">
                     <Globe size={18} />
                   </a>
-                  <a href="mailto:febbriansyah01@gmail.com" className="p-3 bg-gray-950 border border-gray-800 rounded-xl hover:bg-rose-600 hover:border-rose-600 hover:-translate-y-1 hover:text-white transition-all duration-300 text-gray-400 hover:shadow-[0_8px_20px_rgba(225,29,72,0.4)]">
+                  <a href="mailto:xfebriansyah000@gmail.com" className="p-3 bg-gray-950 border border-gray-800 rounded-xl hover:bg-rose-600 hover:border-rose-600 hover:-translate-y-1 hover:text-white transition-all duration-300 text-gray-400 hover:shadow-[0_8px_20px_rgba(225,29,72,0.4)]">
                     <Mail size={18} />
                   </a>
                 </div>
