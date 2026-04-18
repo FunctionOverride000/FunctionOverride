@@ -1,0 +1,27 @@
+name: AI Agent - Auto Publish Articles
+on:
+  schedule:
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger AI Agent
+        run: |
+          echo "Triggering AI Agent at $(date)"
+          
+          # PERUBAHAN LEAD DEV: Gunakan -X POST untuk menghindari Next.js Cache
+          RESPONSE=$(curl -X POST -s -o /tmp/response.json -w "%{http_code}" \
+            "https://fosht.vercel.app/api/agent?secret=${{ secrets.AGENT_SECRET }}")
+          
+          echo "HTTP Status: $RESPONSE"
+          cat /tmp/response.json
+          
+          # Validasi ketat, jika bukan 200 OK, gagalkan action-nya (merah)
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Agent failed with status $RESPONSE"
+            exit 1
+          fi
+          echo "Agent completed successfully"
