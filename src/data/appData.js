@@ -153,6 +153,15 @@ export const portfolioProjects = [
     domain: "gggindonesia.com",
     type: "portfolio"
   },
+  {
+    id: "leadscout",
+    title: "LeadScout",
+    desc: "LeadScout is a premium B2B Executive Profiler and automated web scraping engine.",
+    details: "Engineered for high-precision data mining, this tool leverages API backends to bypass conventional bot protections. It systematically extracts C-level executive profiles and commercial metadata across specific industries, acting as a stealthy, high-yield lead generation command center.",
+    logoImg: null, // Anda bisa menggantinya jika nanti memiliki logo khusus, misal: "/leadscout.png"
+    domain: "https://xleadscout.streamlit.app",
+    type: "portfolio"
+  },
 ];
 
 // --- MAIN CONTENT TRANSLATIONS ---
