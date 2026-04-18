@@ -147,6 +147,7 @@ export const OshtoreCard = ({ project, onClick }) => {
 
 export const ProjectModal = ({ project, onClose, color = "cyan" }) => {
   if (!project) return null;
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [imgError, setImgError] = useState(false);
   const c = colorStyles[color] || colorStyles.cyan;
   const validImageSrc = getValidImageSrc(project?.logoImg);

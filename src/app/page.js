@@ -426,6 +426,25 @@ export default function App() {
                     )
                   ))}
                 </div>
+
+                {/* Tombol dinamis sesuai filter */}
+                {activeFilter !== 'oshtore' && (
+                  <div className="mt-12 flex justify-center">
+                    <button 
+                      onClick={() => {
+                        addLog(`UI_EVENT: REDIRECT_TO_${activeFilter.toUpperCase()}`, "INFO");
+                        window.location.href = `/${activeFilter}`;
+                      }}
+                      className="interactive group relative inline-flex items-center gap-2 font-mono text-sm text-gray-500 hover:text-cyan-400 transition-colors duration-300"
+                    >
+                      <span className="text-cyan-500/50 group-hover:text-cyan-400">/</span>
+                      <span className="border-b border-transparent group-hover:border-cyan-500/50 pb-0.5 transition-all">
+                        {activeFilter}
+                      </span>
+                      <span className="w-2 h-4 bg-cyan-400 opacity-0 group-hover:opacity-100 animate-pulse ml-1"></span>
+                    </button>
+                  </div>
+                )}
               </ScrollReveal>
             </div>
           </section>
