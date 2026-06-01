@@ -245,7 +245,7 @@ async function callGroq(systemPrompt, userPrompt, retries = 2) {
 // Wrapper — coba Gemini dulu, fallback ke Groq
 async function callLLM(systemPrompt, userPrompt) {
   try {
-    console.log('[Agent] Trying Gemini...');
+    console.log('[Agent] Trying Gemini... key:', !!process.env.GEMINI_API_KEY);
     const text = await callGemini(systemPrompt, userPrompt);
     console.log('[Agent] Gemini OK');
     return text;
