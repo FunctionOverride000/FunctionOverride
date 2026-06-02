@@ -181,7 +181,7 @@ async function callGemini(systemPrompt, userPrompt) {
   if (!apiKey) throw new Error('No GEMINI_API_KEY');
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
