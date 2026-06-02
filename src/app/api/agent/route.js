@@ -140,6 +140,8 @@ function validateSearchResults(searchData) {
   const hasContent = results.some(r => (r.content || r.snippet || '').length > 150);
   if (!hasContent) return { valid: false, reason: 'Konten terlalu dangkal' };
   if (!searchData.answer || searchData.answer.length < 50) return { valid: false, reason: 'Tidak ada ringkasan' };
+  const answerHasNoData = /tidak tersedia|not available|no data|unavailable/i.test(searchData.answer || '');
+  if (answerHasNoData) return { valid: false, reason: 'Data tidak tersedia di sumber' };
   return { valid: true };
 }
 
@@ -656,3 +658,4 @@ export async function POST(request) {
 export async function GET(request) {
   return POST(request);
 }
+
