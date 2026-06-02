@@ -13,32 +13,38 @@ const BackgroundAnimation = () => {
     let animationFrameId;
     let particles = [];
 
-    // Konfigurasi Partikel
-    const particleCount = 80; // Jumlah titik (kurangi jika ingin lebih ringan lagi)
-    const connectionDistance = 150; // Jarak maksimum untuk garis penghubung
-    const moveSpeed = 0.5; // Kecepatan gerak
+    // Jarak koneksi antar partikel tetap
+    const connectionDistance = 150;
+    const moveSpeed = 0.5;
 
-    // Fungsi untuk menyesuaikan ukuran canvas dengan layar
+    // Fungsi untuk menghitung jumlah partikel adaptif berdasarkan lebar layar
+    const getAdaptiveParticleCount = () => {
+      const width = window.innerWidth;
+      if (width < 768) return 40; // Mobile: lebih sedikit partikel
+      if (width < 1024) return 60; // Tablet
+      return 80; // Desktop
+    };
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      // Re-init partikel saat ukuran layar berubah drastis agar tidak menumpuk
+      initParticles(); 
     };
 
-    // Class Partikel
     class Particle {
       constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
         this.vx = (Math.random() - 0.5) * moveSpeed;
         this.vy = (Math.random() - 0.5) * moveSpeed;
-        this.size = Math.random() * 2 + 1; // Ukuran titik random
+        this.size = Math.random() * 2 + 1;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
 
-        // Pantulan jika kena pinggir layar
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
       }
@@ -46,29 +52,26 @@ const BackgroundAnimation = () => {
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(150, 150, 150, 0.5)'; // Warna titik (abu-abu transparan)
+        ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
         ctx.fill();
       }
     }
 
-    // Inisialisasi partikel
     const initParticles = () => {
       particles = [];
-      for (let i = 0; i < particleCount; i++) {
+      const count = getAdaptiveParticleCount();
+      for (let i = 0; i < count; i++) {
         particles.push(new Particle());
       }
     };
 
-    // Loop Animasi Utama
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Update dan gambar setiap partikel
       particles.forEach((particle, index) => {
         particle.update();
         particle.draw();
 
-        // Gambar garis penghubung
         for (let j = index + 1; j < particles.length; j++) {
           const dx = particle.x - particles[j].x;
           const dy = particle.y - particles[j].y;
@@ -88,15 +91,22 @@ const BackgroundAnimation = () => {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    // Setup awal
-    window.addEventListener('resize', resizeCanvas);
+    // Debounce resize event untuk mencegah frame drop saat resize window
+    let resizeTimer;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeCanvas();
+      }, 250); // Tunggu 250ms setelah resize selesai baru hitung ulang
+    };
+
+    window.addEventListener('resize', handleResize);
     resizeCanvas();
-    initParticles();
     animate();
 
-    // Cleanup saat komponen di-unmount (PENTING agar tidak memori bocor)
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -105,7 +115,7 @@ const BackgroundAnimation = () => {
     <canvas
       ref={canvasRef}
       className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none"
-      style={{ background: 'transparent' }} // Pastikan background transparan agar warna CSS global terlihat
+      style={{ background: 'transparent' }}
     />
   );
 };

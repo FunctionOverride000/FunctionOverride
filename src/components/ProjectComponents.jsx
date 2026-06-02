@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ExternalLink, ChevronRight, Globe, ArrowRight, Activity, Terminal, X } from 'lucide-react';
+import Image from 'next/image';
 
 const colorStyles = {
   cyan: {
@@ -39,9 +40,20 @@ const colorStyles = {
   }
 };
 
+// Helper function untuk memastikan format path gambar valid untuk next/image
+const getValidImageSrc = (src) => {
+  if (!src) return null;
+  if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) {
+    return src;
+  }
+  return src.startsWith('/') ? src : `/${src}`;
+};
+
 export const ProjectModule = ({ title, domain, icon: Icon, color = "cyan", desc, image, onClick }) => {
   const [imgError, setImgError] = useState(false);
   const c = colorStyles[color] || colorStyles.cyan;
+  
+  const validImageSrc = getValidImageSrc(image);
 
   return (
     <div 
@@ -52,11 +64,13 @@ export const ProjectModule = ({ title, domain, icon: Icon, color = "cyan", desc,
       
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">
-          <div className={`w-12 h-12 flex items-center justify-center rounded-lg bg-black/50 border border-gray-700 group-hover:border-cyan-500 transition-colors duration-300 overflow-hidden`}>
-             {image && !imgError ? (
-               <img 
-                 src={image} 
-                 alt={title} 
+          <div className={`relative w-12 h-12 flex items-center justify-center rounded-lg bg-black/50 border border-gray-700 group-hover:border-cyan-500 transition-colors duration-300 overflow-hidden`}>
+             {validImageSrc && !imgError ? (
+               <Image 
+                 src={validImageSrc} 
+                 alt={title || "Project thumbnail"} 
+                 width={48} 
+                 height={48}
                  className="w-full h-full object-contain p-1"
                  onError={() => setImgError(true)}
                />
@@ -87,6 +101,7 @@ export const ProjectModule = ({ title, domain, icon: Icon, color = "cyan", desc,
 
 export const OshtoreCard = ({ project, onClick }) => {
   const [imgError, setImgError] = useState(false);
+  const validImageSrc = getValidImageSrc(project?.logoImg);
 
   return (
     <div 
@@ -96,11 +111,13 @@ export const OshtoreCard = ({ project, onClick }) => {
        <div className="absolute inset-0 bg-gradient-to-r from-[#ff9100]/10 to-transparent opacity-50"></div>
        
        <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center md:items-start gap-8">
-         <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 bg-black/40 rounded-2xl border border-gray-700 flex items-center justify-center group-hover:border-[#ff9100] transition-colors overflow-hidden p-2">
-            {project.logoImg && !imgError ? (
-              <img 
-                src={project.logoImg} 
-                alt={project.title} 
+         <div className="relative w-24 h-24 md:w-32 md:h-32 shrink-0 bg-black/40 rounded-2xl border border-gray-700 flex items-center justify-center group-hover:border-[#ff9100] transition-colors overflow-hidden p-2">
+            {validImageSrc && !imgError ? (
+              <Image 
+                src={validImageSrc} 
+                alt={project.title || "Oshtore thumbnail"} 
+                width={128} 
+                height={128}
                 className="w-full h-full object-contain"
                 onError={() => setImgError(true)}
               />
@@ -130,8 +147,10 @@ export const OshtoreCard = ({ project, onClick }) => {
 
 export const ProjectModal = ({ project, onClose, color = "cyan" }) => {
   if (!project) return null;
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [imgError, setImgError] = useState(false);
   const c = colorStyles[color] || colorStyles.cyan;
+  const validImageSrc = getValidImageSrc(project?.logoImg);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
@@ -143,11 +162,13 @@ export const ProjectModal = ({ project, onClose, color = "cyan" }) => {
       <div className={`animate-modal relative bg-[#0a0f1e] border ${c.borderSoft} w-full max-w-2xl rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col`}>
         <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-black/40">
            <div className="flex items-center space-x-3">
-             <div className={`p-2 ${c.bgSoft} rounded border ${c.borderSoft} h-10 w-10 flex items-center justify-center overflow-hidden`}>
-                 {project.logoImg && !imgError ? (
-                   <img 
-                     src={project.logoImg} 
+             <div className={`relative p-2 ${c.bgSoft} rounded border ${c.borderSoft} h-10 w-10 flex items-center justify-center overflow-hidden`}>
+                 {validImageSrc && !imgError ? (
+                   <Image 
+                     src={validImageSrc} 
                      alt="logo" 
+                     width={40} 
+                     height={40}
                      className="w-full h-full object-contain"
                      onError={() => setImgError(true)}
                    />

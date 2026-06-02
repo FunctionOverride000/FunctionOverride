@@ -2,12 +2,16 @@
 
 import React, { useState, useCallback } from 'react';
 import { Shield, ArrowLeft, Code } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
-// --- IMPORTS KOMPONEN ---
+// --- IMPORTS KOMPONEN (STATIS) ---
 import ThemeStyles from '@/components/ThemeStyles';
 import TerminalHeader from '@/components/TerminalHeader';
 import { CustomCursor } from '@/components/UIUtils';
-import { ProjectModule, ProjectModal } from '@/components/ProjectComponents';
+import { ProjectModule } from '@/components/ProjectComponents';
+
+// --- DYNAMIC IMPORTS (CODE SPLITTING) ---
+const ProjectModal = dynamic(() => import('@/components/ProjectComponents').then(mod => mod.ProjectModal), { ssr: false });
 
 // --- IMPORT DATA ---
 import { personalProjects } from '@/data/appData';
